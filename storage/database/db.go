@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5"
-	"log"
+	"log/slog"
 	"time"
 )
 
@@ -17,20 +17,32 @@ type DbConfig struct {
 	DbPort     string `yaml:"db_port" env:"DB_PORT"`
 }
 
-func DbInit(config *DbConfig) (*pgx.Conn, error) {
+func DbInit(config *DbConfig, log *slog.Logger) (*pgx.Conn, error) {
+	const op = "database/DbInit"
+	log = slog.With(
+		slog.String("op", op),
+		slog.String("host", config.DbHost),
+		slog.String("port", config.DbPort),
+		slog.String("db_name", config.DbName),
+	)
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", config.DbUser, config.DbPassword, config.DbHost, config.DbPort, config.DbName)
 	//Ставим таймаут операции, после которого функция завершится с ошибкой
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	conn, err := pgx.Connect(ctx, connStr)
 	if err != nil {
+		log.Error("connect db failed", err)
 		return nil, err
 	}
-	log.Println("Successfully connected with pgx!")
+	log.Info("Successfully connected with pgx!")
 	return conn, nil
 }
 
-func CreateTables(conn *pgx.Conn) error {
+func CreateTables(conn *pgx.Conn, log *slog.Logger) error {
+	const op = "database/CreateTables"
+	log = slog.With(
+		slog.String("op", op))
+
 	query := `
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -46,8 +58,9 @@ CREATE TABLE IF NOT EXISTS users (
 	defer cancel()
 	_, err := conn.Exec(ctx, query)
 	if err != nil {
+		log.Error("create table failed", err)
 		return fmt.Errorf("failed to create users table: %w", err)
 	}
-	log.Println("Users table created successfully")
+	log.Info("Users table created successfully")
 	return nil
 }
