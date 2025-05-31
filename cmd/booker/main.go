@@ -34,7 +34,7 @@ func main() {
 		DbPort:     cfg.DbPort,
 	}
 	logger.Info("test")
-	db, err := database.DbInit(&dbConfig, logger)
+	db, err := database.DbConnect(&dbConfig, logger)
 	if err != nil {
 		panic(err)
 	}

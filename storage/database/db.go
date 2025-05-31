@@ -17,8 +17,8 @@ type DbConfig struct {
 	DbPort     string `yaml:"db_port" env:"DB_PORT"`
 }
 
-func DbInit(config *DbConfig, log *slog.Logger) (*pgx.Conn, error) {
-	const op = "database/DbInit"
+func DbConnect(config *DbConfig, log *slog.Logger) (*pgx.Conn, error) {
+	const op = "database/DbConnect"
 	log = slog.With(
 		slog.String("op", op),
 		slog.String("host", config.DbHost),
