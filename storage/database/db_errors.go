@@ -6,9 +6,6 @@ import (
 )
 
 func PsqlErrorHandler(err error) error {
-	//if err == nil {
-	//	return nil
-	//}
 	if pgErr, ok := err.(*pgconn.PgError); ok {
 		switch pgErr.Code {
 		case "23505": // unique_violation

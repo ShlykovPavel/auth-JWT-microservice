@@ -7,9 +7,8 @@ import (
 
 // Config представляет конфигурацию приложения
 type Config struct {
-	Env     string `yaml:"ENV" env:"ENV" env-default:"production"`
-	Address string `yaml:"address" env:"ADDRESS" env-default:"localhost:8080"`
-	//Port       int    `yaml:"port"  env:"PORT" env-default:"8080"`
+	Env        string `yaml:"ENV" env:"ENV" env-default:"production"`
+	Address    string `yaml:"address" env:"ADDRESS" env-default:"localhost:8080"`
 	DbHost     string `yaml:"db_host" env:"DB_HOST" env-required:"true" `
 	DbPort     string `yaml:"db_port" env:"DB_PORT" env-required:"true"`
 	DbName     string `yaml:"db_name" env:"DB_NAME" env-required:"true"`

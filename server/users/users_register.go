@@ -2,6 +2,7 @@ package users
 
 import (
 	resp "booker/lib/api/response"
+	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator"
@@ -24,13 +25,8 @@ type Response struct {
 	UserID int64 `json:"id"`
 }
 
-// UserCreate Интерфейс с функцией создания
-//type UserCreate interface {
-//	Create(ctx context.Context, user *User) (*UserID, error)
-//}
-
 func CreateUser(log *slog.Logger, db *pgx.Conn) http.HandlerFunc {
-	return (func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users.CreateUser"
 		log = log.With(
 			slog.String("operation", op),
@@ -42,22 +38,26 @@ func CreateUser(log *slog.Logger, db *pgx.Conn) http.HandlerFunc {
 		err := render.DecodeJSON(r.Body, &user)
 		if err != nil {
 			log.Error("Error while decoding request body", err)
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, resp.Error(err.Error()))
 			return
 		}
+
 		//Валидация
 		//TODO Посмотреть где ещё создаются валидаторы, и если их много, то нужно вынести инициализацию валидатора глобально для повышения оптимизации
 		if err = validator.New().Struct(&user); err != nil {
 			validationErrors := err.(validator.ValidationErrors)
 			log.Error("Error validating request body", validationErrors)
+			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, resp.ValidationError(validationErrors))
 			return
 
 		}
-		//	хешируем пароль
+		//	Хешируем пароль
 		passwordHash, err := HashUserPassword(user.Password, log)
 		if err != nil {
 			log.Error("Error while hashing password", err)
+			render.Status(r, http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(err.Error()))
 			return
 		}
@@ -66,14 +66,22 @@ func CreateUser(log *slog.Logger, db *pgx.Conn) http.HandlerFunc {
 		userId, err := usrCreate.Create(r.Context(), &user)
 		if err != nil {
 			log.Error("Error while creating user", err)
+			if errors.Is(err, ErrEmailAlreadyExists) {
+				render.Status(r, http.StatusBadRequest)
+				render.JSON(w, r, resp.Error(
+					err.Error()))
+				return
+			}
+			render.Status(r, http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(
 				err.Error()))
 			return
 		}
 		log.Info("Created user", userId)
+		render.Status(r, http.StatusCreated)
 		render.JSON(w, r, Response{
 			resp.OK(),
 			userId.ID,
 		})
-	})
+	}
 }

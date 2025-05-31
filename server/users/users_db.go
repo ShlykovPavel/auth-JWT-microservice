@@ -4,6 +4,7 @@ import (
 	"booker/storage/database"
 	"context"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type UserRepository struct {
@@ -34,9 +35,12 @@ RETURNING id`
 
 	var id int64
 	err := us.db.QueryRow(ctx, query, userinfo.FirstName, userinfo.LastName, userinfo.Email, userinfo.Password).Scan(&id)
-	//err = database.PsqlErrorHandler(err)
 	if err != nil {
-		return &UserID{}, database.PsqlErrorHandler(err)
+		dbErr := database.PsqlErrorHandler(err)
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+			return &UserID{}, ErrEmailAlreadyExists
+		}
+		return &UserID{}, dbErr
 	}
 
 	return &UserID{
