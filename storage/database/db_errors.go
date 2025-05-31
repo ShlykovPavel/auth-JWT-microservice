@@ -5,18 +5,25 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// Коды ошибок PosgreSQL
+const PSQLUniqueError = "23505"                    // Нарушение уникальности поля
+const PSQLForeignKeyError = "23503"                // Нарушение внешнего ключа
+const PSQLNotNullError = "23502"                   // Нельзя вставить NULL
+const PSQLStringDataRightTruncationError = "22001" // Данные слишком длинные
+const PSQLSyntaxError = "42601"                    // Синтаксическая ошибка в SQL
+
 func PsqlErrorHandler(err error) error {
 	if pgErr, ok := err.(*pgconn.PgError); ok {
 		switch pgErr.Code {
-		case "23505": // unique_violation
+		case PSQLUniqueError: // unique_violation
 			return fmt.Errorf("запись уже существует: %w", err)
-		case "23503": // foreign_key_violation
+		case PSQLForeignKeyError: // foreign_key_violation
 			return fmt.Errorf("нарушение внешнего ключа: %w", err)
-		case "23502": // not_null_violation
+		case PSQLNotNullError: // not_null_violation
 			return fmt.Errorf("нельзя вставить NULL: %w", err)
-		case "22001": // string_data_right_truncation
+		case PSQLStringDataRightTruncationError: // string_data_right_truncation
 			return fmt.Errorf("данные слишком длинные: %w", err)
-		case "42601": // syntax_error
+		case PSQLSyntaxError: // syntax_error
 			return fmt.Errorf("синтаксическая ошибка в SQL: %w", err)
 		default:
 			return fmt.Errorf("ошибка PostgreSQL (%s): %w", pgErr.Code, err)

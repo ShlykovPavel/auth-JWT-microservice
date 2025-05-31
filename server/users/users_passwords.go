@@ -9,9 +9,8 @@ import (
 // при хешировании автоматически генерируется соль
 // ограничение длинны пароля 72 байта (можно выставить 64 символа)
 func HashUserPassword(password string, log *slog.Logger) (string, error) {
-	const op = "server/users.HashUserPassword"
 	log = log.With(
-		slog.String("operation", op))
+		slog.String("operation", "server/users.HashUserPassword"))
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Error("Hashing password is failed. Error: ", err)
@@ -25,9 +24,8 @@ func HashUserPassword(password string, log *slog.Logger) (string, error) {
 // Из переданного хеша пароля он сам достаёт соль, и хеширует пароль с этой солью
 // Если пароли совпадают, то ничего не возвращается
 func ComparePassword(hashedPassword string, password string, log *slog.Logger) bool {
-	const op = "server/users.ComparePassword"
 	log = log.With(
-		slog.String("operation", op))
+		slog.String("operation", "server/users.ComparePassword"))
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
 		log.Error("Password is incorrect. Error: ", err)

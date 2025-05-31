@@ -37,7 +37,7 @@ RETURNING id`
 	err := us.db.QueryRow(ctx, query, userinfo.FirstName, userinfo.LastName, userinfo.Email, userinfo.Password).Scan(&id)
 	if err != nil {
 		dbErr := database.PsqlErrorHandler(err)
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == database.PSQLUniqueError {
 			return &UserID{}, ErrEmailAlreadyExists
 		}
 		return &UserID{}, dbErr
