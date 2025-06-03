@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"time"
 )
@@ -26,22 +27,87 @@ func DbConnect(config *DbConfig, log *slog.Logger) (*pgx.Conn, error) {
 		slog.String("db_name", config.DbName),
 	)
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", config.DbUser, config.DbPassword, config.DbHost, config.DbPort, config.DbName)
-	//Ставим таймаут операции, после которого функция завершится с ошибкой
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	conn, err := pgx.Connect(ctx, connStr)
-	if err != nil {
+
+	const retryCount = 5
+	const retryDelay = 5 * time.Second
+
+	var conn *pgx.Conn
+	var err error
+
+	for i := 1; i <= retryCount; i++ {
+		//Ставим таймаут операции, после которого функция завершится с ошибкой
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		//Попытка соединения
+		conn, err = pgx.Connect(ctx, connStr)
+		//Закрываем наш контекст, что б освободить ресурсы
+		cancel()
+
+		if err == nil {
+			log.Info("Successfully connected with pgx!")
+			return conn, nil
+		}
+
 		log.Error("connect db failed", err)
-		return nil, err
+		if i < retryCount {
+			log.Info(fmt.Sprintf("Retrying in %v... (attempt %d/%d)", retryDelay, i+1, retryCount))
+			time.Sleep(retryDelay)
+		}
+
 	}
-	log.Info("Successfully connected with pgx!")
-	return conn, nil
+	return nil, err
 }
 
-func CreateTables(conn *pgx.Conn, log *slog.Logger) error {
+func CreatePool(ctx context.Context, config *DbConfig, logger *slog.Logger) (*pgxpool.Pool, error) {
+	const op = "database/CreatePool"
+	logger = logger.With(
+		slog.String("op", op),
+		slog.String("host", config.DbHost),
+		slog.String("port", config.DbPort),
+		slog.String("db_name", config.DbName),
+	)
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", config.DbUser, config.DbPassword, config.DbHost, config.DbPort, config.DbName)
+
+	connConfig, err := pgxpool.ParseConfig(connStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse pgx config: %w", err)
+	}
+
+	// Настройка параметров пула
+	connConfig.MaxConns = 10                      // Максимальное количество соединений
+	connConfig.MinConns = 0                       // Минимальное количество соединений
+	connConfig.MaxConnLifetime = time.Hour        // Максимальное время жизни соединения
+	connConfig.MaxConnIdleTime = 30 * time.Minute // Время бездействия перед закрытием
+	connConfig.HealthCheckPeriod = time.Minute    // Период проверки жизни соединения с БД
+
+	pool, err := pgxpool.NewWithConfig(ctx, connConfig)
+	if err != nil {
+		return nil, fmt.Errorf("create pool failed: %w", err)
+	}
+	logger.Info("Successfully created pool")
+	// Проверка соединения
+	if err := pool.Ping(ctx); err != nil {
+		return nil, fmt.Errorf("ping failed: %w", err)
+	}
+	stats := pool.Stat()
+	logger.Debug("current pool state",
+		slog.Int("max_conns", int(stats.MaxConns())),
+		slog.Int("total_conns", int(stats.TotalConns())),
+		slog.Int("idle_conns", int(stats.IdleConns())),
+		slog.Int("acquired_conns", int(stats.AcquiredConns())),
+	)
+	return pool, nil
+}
+
+func CreateTables(poll *pgxpool.Pool, logger *slog.Logger) error {
 	const op = "database/CreateTables"
-	log = slog.With(
+	logger = logger.With(
 		slog.String("op", op))
+	//Берём соединение с БД и пула
+	connection, err := poll.Acquire(context.Background())
+	if err != nil {
+		return fmt.Errorf("acquire failed: %w", err)
+	}
+	defer connection.Release()
 
 	query := `
 CREATE TABLE IF NOT EXISTS users (
@@ -56,11 +122,11 @@ CREATE TABLE IF NOT EXISTS users (
 `
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err := conn.Exec(ctx, query)
+	_, err = connection.Exec(ctx, query)
 	if err != nil {
-		log.Error("create table failed", err)
+		logger.Error("create table failed", err)
 		return fmt.Errorf("failed to create users table: %w", err)
 	}
-	log.Info("Users table created successfully")
+	logger.Info("Users table created successfully")
 	return nil
 }

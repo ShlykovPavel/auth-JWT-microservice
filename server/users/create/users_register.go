@@ -2,39 +2,29 @@ package users
 
 import (
 	resp "booker/lib/api/response"
+	"booker/server/users"
+	"booker/server/users/models"
 	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"net/http"
 )
 
 // User Структура пользователя для создания
-type User struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email" validate:"required,email"`
-	Password  string `json:"password"  validate:"required,lte=64"`
-}
 
-// Response Структура ответа на запрос
-type Response struct {
-	resp.Response
-	UserID int64 `json:"id"`
-}
-
-func CreateUser(log *slog.Logger, db *pgx.Conn) http.HandlerFunc {
+func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users.CreateUser"
 		log = log.With(
 			slog.String("operation", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 			slog.String("url", r.URL.Path))
-		usrCreate := NewUsersDB(db)
+		usrCreate := users.NewUsersDB(dbPoll)
 
-		var user User
+		var user models.UserCreate
 		err := render.DecodeJSON(r.Body, &user)
 		if err != nil {
 			log.Error("Error while decoding request body", err)
@@ -54,7 +44,7 @@ func CreateUser(log *slog.Logger, db *pgx.Conn) http.HandlerFunc {
 
 		}
 		//	Хешируем пароль
-		passwordHash, err := HashUserPassword(user.Password, log)
+		passwordHash, err := users.HashUserPassword(user.Password, log)
 		if err != nil {
 			log.Error("Error while hashing password", err)
 			render.Status(r, http.StatusInternalServerError)
@@ -66,7 +56,7 @@ func CreateUser(log *slog.Logger, db *pgx.Conn) http.HandlerFunc {
 		userId, err := usrCreate.Create(r.Context(), &user)
 		if err != nil {
 			log.Error("Error while creating user", err)
-			if errors.Is(err, ErrEmailAlreadyExists) {
+			if errors.Is(err, users.ErrEmailAlreadyExists) {
 				render.Status(r, http.StatusBadRequest)
 				render.JSON(w, r, resp.Error(
 					err.Error()))
@@ -79,7 +69,7 @@ func CreateUser(log *slog.Logger, db *pgx.Conn) http.HandlerFunc {
 		}
 		log.Info("Created user", userId)
 		render.Status(r, http.StatusCreated)
-		render.JSON(w, r, Response{
+		render.JSON(w, r, models.CreateUserResponse{
 			resp.OK(),
 			userId.ID,
 		})

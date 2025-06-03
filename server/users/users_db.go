@@ -1,23 +1,27 @@
 package users
 
 import (
+	"booker/server/users/models"
 	"booker/storage/database"
 	"context"
-	"github.com/jackc/pgx/v5"
+	"errors"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+var ErrEmailAlreadyExists = errors.New("Пользователь с email уже существует. ")
+
 type UserRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
 type UserID struct {
 	ID int64
 }
 
-func NewUsersDB(db *pgx.Conn) *UserRepository {
+func NewUsersDB(dbPoll *pgxpool.Pool) *UserRepository {
 	return &UserRepository{
-		db: db,
+		db: dbPoll,
 	}
 }
 
@@ -27,7 +31,7 @@ func NewUsersDB(db *pgx.Conn) *UserRepository {
 // userinfo - структуру User с необходимыми полями для добавления
 //
 // После запроса возвращается Id созданного пользователя
-func (us *UserRepository) Create(ctx context.Context, userinfo *User) (*UserID, error) {
+func (us *UserRepository) Create(ctx context.Context, userinfo *models.UserCreate) (*UserID, error) {
 	query := `
 INSERT INTO users (first_name, last_name, email, password)
 VALUES ($1, $2, $3, $4)

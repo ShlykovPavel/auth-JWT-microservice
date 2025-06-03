@@ -2,8 +2,9 @@ package main
 
 import (
 	"booker/config"
-	"booker/server/users"
+	users "booker/server/users/create"
 	"booker/storage/database"
+	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -26,6 +27,8 @@ func main() {
 	}
 	fmt.Println(cfg)
 	logger := setupLogger(cfg.Env)
+	logger.Info("Starting application")
+	logger.Debug("Debug messages enabled")
 	dbConfig := database.DbConfig{
 		DbName:     cfg.DbName,
 		DbUser:     cfg.DbUser,
@@ -33,12 +36,9 @@ func main() {
 		DbHost:     cfg.DbHost,
 		DbPort:     cfg.DbPort,
 	}
-	logger.Info("test")
-	db, err := database.DbConnect(&dbConfig, logger)
-	if err != nil {
-		panic(err)
-	}
-	err = database.CreateTables(db, logger)
+
+	poll, err := database.CreatePool(context.Background(), &dbConfig, logger)
+	err = database.CreateTables(poll, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +48,7 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	router.Post("/user/register", users.CreateUser(logger, db))
+	router.Post("/user/register", users.CreateUser(logger, poll))
 
 	logger.Info("Starting HTTP server", slog.String("adress", cfg.Address))
 	// Run server
