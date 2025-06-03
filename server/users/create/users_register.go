@@ -27,7 +27,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		var user models.UserCreate
 		err := render.DecodeJSON(r.Body, &user)
 		if err != nil {
-			log.Error("Error while decoding request body", err)
+			log.Error("Error while decoding request body", "err", err)
 			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, resp.Error(err.Error()))
 			return
@@ -37,7 +37,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		//TODO Посмотреть где ещё создаются валидаторы, и если их много, то нужно вынести инициализацию валидатора глобально для повышения оптимизации
 		if err = validator.New().Struct(&user); err != nil {
 			validationErrors := err.(validator.ValidationErrors)
-			log.Error("Error validating request body", validationErrors)
+			log.Error("Error validating request body", "err", validationErrors)
 			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, resp.ValidationError(validationErrors))
 			return
@@ -46,7 +46,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		//	Хешируем пароль
 		passwordHash, err := users.HashUserPassword(user.Password, log)
 		if err != nil {
-			log.Error("Error while hashing password", err)
+			log.Error("Error while hashing password", "err", err)
 			render.Status(r, http.StatusInternalServerError)
 			render.JSON(w, r, resp.Error(err.Error()))
 			return
@@ -55,7 +55,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		//Записываем в бд
 		userId, err := usrCreate.Create(r.Context(), &user)
 		if err != nil {
-			log.Error("Error while creating user", err)
+			log.Error("Error while creating user", "err", err)
 			if errors.Is(err, users.ErrEmailAlreadyExists) {
 				render.Status(r, http.StatusBadRequest)
 				render.JSON(w, r, resp.Error(
@@ -67,7 +67,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 				err.Error()))
 			return
 		}
-		log.Info("Created user", userId)
+		log.Info("Created user", "user id", userId)
 		render.Status(r, http.StatusCreated)
 		render.JSON(w, r, models.CreateUserResponse{
 			resp.OK(),

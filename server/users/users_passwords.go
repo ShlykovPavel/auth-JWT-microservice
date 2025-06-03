@@ -13,7 +13,7 @@ func HashUserPassword(password string, log *slog.Logger) (string, error) {
 		slog.String("operation", "server/users.HashUserPassword"))
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Error("Hashing password is failed. Error: ", err)
+		log.Error("Hashing password is failed. Error: ", "err", err)
 		return "", err
 	}
 	return string(hashedPassword), nil
@@ -28,7 +28,7 @@ func ComparePassword(hashedPassword string, password string, log *slog.Logger) b
 		slog.String("operation", "server/users.ComparePassword"))
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
-		log.Error("Password is incorrect. Error: ", err)
+		log.Error("Password is incorrect. Error: ", "err", err)
 		return false
 	}
 	return true

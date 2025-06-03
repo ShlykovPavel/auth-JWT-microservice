@@ -47,7 +47,7 @@ func DbConnect(config *DbConfig, log *slog.Logger) (*pgx.Conn, error) {
 			return conn, nil
 		}
 
-		log.Error("connect db failed", err)
+		log.Error("connect db failed", "err", err.Error())
 		if i < retryCount {
 			log.Info(fmt.Sprintf("Retrying in %v... (attempt %d/%d)", retryDelay, i+1, retryCount))
 			time.Sleep(retryDelay)
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS users (
 	defer cancel()
 	_, err = connection.Exec(ctx, query)
 	if err != nil {
-		logger.Error("create table failed", err)
+		logger.Error("create table failed", "err", err)
 		return fmt.Errorf("failed to create users table: %w", err)
 	}
 	logger.Info("Users table created successfully")
