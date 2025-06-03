@@ -16,7 +16,7 @@ func PsqlErrorHandler(err error) error {
 	if pgErr, ok := err.(*pgconn.PgError); ok {
 		switch pgErr.Code {
 		case PSQLUniqueError: // unique_violation
-			return fmt.Errorf("запись уже существует: %w", err)
+			return fmt.Errorf("Нарушение уникальности: %w", err)
 		case PSQLForeignKeyError: // foreign_key_violation
 			return fmt.Errorf("нарушение внешнего ключа: %w", err)
 		case PSQLNotNullError: // not_null_violation
