@@ -1,7 +1,7 @@
 package users
 
 import (
-	"booker/server/users/models"
+	"booker/lib/api/models"
 	"booker/storage/database"
 	"context"
 	"errors"
@@ -13,10 +13,6 @@ var ErrEmailAlreadyExists = errors.New("Пользователь с email уже
 
 type UserRepository struct {
 	db *pgxpool.Pool
-}
-
-type UserID struct {
-	ID int64
 }
 
 func NewUsersDB(dbPoll *pgxpool.Pool) *UserRepository {
@@ -31,7 +27,7 @@ func NewUsersDB(dbPoll *pgxpool.Pool) *UserRepository {
 // userinfo - структуру User с необходимыми полями для добавления
 //
 // После запроса возвращается Id созданного пользователя
-func (us *UserRepository) Create(ctx context.Context, userinfo *models.UserCreate) (*UserID, error) {
+func (us *UserRepository) Create(ctx context.Context, userinfo *models.UserCreate) (int64, error) {
 	query := `
 INSERT INTO users (first_name, last_name, email, password)
 VALUES ($1, $2, $3, $4)
@@ -42,12 +38,10 @@ RETURNING id`
 	if err != nil {
 		dbErr := database.PsqlErrorHandler(err)
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == database.PSQLUniqueError {
-			return &UserID{}, ErrEmailAlreadyExists
+			return 0, ErrEmailAlreadyExists
 		}
-		return &UserID{}, dbErr
+		return 0, dbErr
 	}
 
-	return &UserID{
-		ID: id,
-	}, nil
+	return id, nil
 }

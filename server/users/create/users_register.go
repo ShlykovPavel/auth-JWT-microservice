@@ -1,9 +1,9 @@
 package users
 
 import (
+	"booker/lib/api/models"
 	resp "booker/lib/api/response"
 	"booker/server/users"
-	"booker/server/users/models"
 	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
@@ -41,8 +41,8 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, resp.ValidationError(validationErrors))
 			return
-
 		}
+
 		//	Хешируем пароль
 		passwordHash, err := users.HashUserPassword(user.Password, log)
 		if err != nil {
@@ -51,6 +51,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 			render.JSON(w, r, resp.Error(err.Error()))
 			return
 		}
+
 		user.Password = passwordHash
 		//Записываем в бд
 		userId, err := usrCreate.Create(r.Context(), &user)
@@ -67,11 +68,12 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 				err.Error()))
 			return
 		}
+
 		log.Info("Created user", "user id", userId)
 		render.Status(r, http.StatusCreated)
 		render.JSON(w, r, models.CreateUserResponse{
 			resp.OK(),
-			userId.ID,
+			userId,
 		})
 	}
 }
