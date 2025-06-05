@@ -1,8 +1,8 @@
 package users
 
 import (
-	"booker/lib/api/models"
-	"booker/storage/database"
+	"booker/internal/lib/api/models"
+	"booker/internal/storage/database"
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5/pgconn"

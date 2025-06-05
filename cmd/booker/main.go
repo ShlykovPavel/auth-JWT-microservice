@@ -1,9 +1,9 @@
 package main
 
 import (
-	"booker/config"
-	users "booker/server/users/create"
-	"booker/storage/database"
+	"booker/internal/config"
+	"booker/internal/server/users/create"
+	"booker/internal/storage/database"
 	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"

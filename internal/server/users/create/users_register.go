@@ -1,9 +1,9 @@
 package users
 
 import (
-	"booker/lib/api/models"
-	resp "booker/lib/api/response"
-	"booker/server/users"
+	"booker/internal/lib/api/models"
+	resp "booker/internal/lib/api/response"
+	users2 "booker/internal/server/users"
 	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
@@ -22,7 +22,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 			slog.String("operation", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 			slog.String("url", r.URL.Path))
-		usrCreate := users.NewUsersDB(dbPoll)
+		usrCreate := users2.NewUsersDB(dbPoll)
 
 		var user models.UserCreate
 		err := render.DecodeJSON(r.Body, &user)
@@ -44,7 +44,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		//	Хешируем пароль
-		passwordHash, err := users.HashUserPassword(user.Password, log)
+		passwordHash, err := users2.HashUserPassword(user.Password, log)
 		if err != nil {
 			log.Error("Error while hashing password", "err", err)
 			render.Status(r, http.StatusInternalServerError)
@@ -57,7 +57,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		userId, err := usrCreate.Create(r.Context(), &user)
 		if err != nil {
 			log.Error("Error while creating user", "err", err)
-			if errors.Is(err, users.ErrEmailAlreadyExists) {
+			if errors.Is(err, users2.ErrEmailAlreadyExists) {
 				render.Status(r, http.StatusBadRequest)
 				render.JSON(w, r, resp.Error(
 					err.Error()))

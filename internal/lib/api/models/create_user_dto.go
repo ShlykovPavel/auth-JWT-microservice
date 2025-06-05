@@ -1,6 +1,8 @@
 package models
 
-import resp "booker/lib/api/response"
+import (
+	resp "booker/internal/lib/api/response"
+)
 
 type UserCreate struct {
 	FirstName string `json:"first_name"`
