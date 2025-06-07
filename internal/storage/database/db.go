@@ -47,7 +47,7 @@ func DbConnect(config *DbConfig, log *slog.Logger) (*pgx.Conn, error) {
 			return conn, nil
 		}
 
-		log.Error("connect db failed", "err", err.Error())
+		log.Error("connect users_db failed", "err", err.Error())
 		if i < retryCount {
 			log.Info(fmt.Sprintf("Retrying in %v... (attempt %d/%d)", retryDelay, i+1, retryCount))
 			time.Sleep(retryDelay)
