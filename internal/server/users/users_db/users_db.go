@@ -8,28 +8,45 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log/slog"
 )
 
 var ErrEmailAlreadyExists = errors.New("Пользователь с email уже существует. ")
 var ErrUserNotFound = errors.New("Пользователь не найден ")
 
-type UserRepository struct {
-	db *pgxpool.Pool
+type UserRepository interface {
+	CreateUser(ctx context.Context, userinfo *models.UserCreate) (int64, error)
+	GetUser(ctx context.Context, userEmail string) (UserInfo, error)
 }
 
-func NewUsersDB(dbPoll *pgxpool.Pool) *UserRepository {
-	return &UserRepository{
-		db: dbPoll,
+type UserRepositoryImpl struct {
+	db  *pgxpool.Pool
+	log *slog.Logger
+}
+
+// UserInfo Структура с информацие о пользователе
+type UserInfo struct {
+	ID           int64
+	FirstName    string
+	LastName     string
+	Email        string
+	PasswordHash string
+}
+
+func NewUsersDB(dbPoll *pgxpool.Pool, log *slog.Logger) *UserRepositoryImpl {
+	return &UserRepositoryImpl{
+		db:  dbPoll,
+		log: log,
 	}
 }
 
-// Create Создание пользователя
+// CreateUser Создание пользователя
 // Принимает:
 // ctx - внешний контекст, что б вызывающая сторона могла контролировать запрос (например выставить таймаут)
 // userinfo - структуру UserInfo с необходимыми полями для добавления
 //
 // После запроса возвращается Id созданного пользователя
-func (us *UserRepository) Create(ctx context.Context, userinfo *models.UserCreate) (int64, error) {
+func (us *UserRepositoryImpl) CreateUser(ctx context.Context, userinfo *models.UserCreate) (int64, error) {
 	query := `
 INSERT INTO users (first_name, last_name, email, password)
 VALUES ($1, $2, $3, $4)
@@ -48,15 +65,7 @@ RETURNING id`
 	return id, nil
 }
 
-type UserInfo struct {
-	ID           int64
-	FirstName    string
-	LastName     string
-	Email        string
-	PasswordHash string
-}
-
-func (us *UserRepository) GetUser(ctx context.Context, userEmail string) (UserInfo, error) {
+func (us *UserRepositoryImpl) GetUser(ctx context.Context, userEmail string) (UserInfo, error) {
 	query := `SELECT id, first_name, last_name, email, password FROM users WHERE email = $1`
 
 	var user UserInfo

@@ -14,8 +14,6 @@ import (
 	"net/http"
 )
 
-// UserInfo Структура пользователя для создания
-
 func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users.CreateUser"
@@ -23,7 +21,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 			slog.String("operation", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 			slog.String("url", r.URL.Path))
-		usrCreate := users_db.NewUsersDB(dbPoll)
+		usrCreate := users_db.NewUsersDB(dbPoll, log)
 
 		var user models.UserCreate
 		err := render.DecodeJSON(r.Body, &user)
@@ -55,7 +53,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 
 		user.Password = passwordHash
 		//Записываем в бд
-		userId, err := usrCreate.Create(r.Context(), &user)
+		userId, err := usrCreate.CreateUser(r.Context(), &user)
 		if err != nil {
 			log.Error("Error while creating user", "err", err)
 			if errors.Is(err, users_db.ErrEmailAlreadyExists) {
