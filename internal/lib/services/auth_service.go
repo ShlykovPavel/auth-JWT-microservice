@@ -4,7 +4,8 @@ import (
 	"booker/internal/lib/api/models"
 	"booker/internal/lib/jwt_tokens"
 	"booker/internal/server/users"
-	"booker/internal/server/users/users_db"
+	"booker/internal/storage/database/repositories/auth_db"
+	"booker/internal/storage/database/repositories/users_db"
 	"context"
 	"errors"
 	"log/slog"
@@ -13,16 +14,18 @@ import (
 var ErrWrongPassword = errors.New("Password is incorrect ")
 
 type AuthService struct {
-	db        users_db.UserRepository
-	log       *slog.Logger
-	secretKey string
+	userRepo   users_db.UserRepository
+	tokensRepo auth_db.TokensRepository
+	log        *slog.Logger
+	secretKey  string
 }
 
-func NewAuthService(db users_db.UserRepository, log *slog.Logger, secretKey string) *AuthService {
+func NewAuthService(db users_db.UserRepository, tokensRepo auth_db.TokensRepository, log *slog.Logger, secretKey string) *AuthService {
 	return &AuthService{
-		db:        db,
-		log:       log,
-		secretKey: secretKey,
+		userRepo:   db,
+		tokensRepo: tokensRepo,
+		log:        log,
+		secretKey:  secretKey,
 	}
 }
 
@@ -33,7 +36,7 @@ func (a *AuthService) Authentication(user *models.AuthUser) (models.UserTokens, 
 		slog.String("request email: ", user.Email))
 
 	// Проверяем что пользователь есть в БД
-	usr, err := a.db.GetUser(context.Background(), user.Email)
+	usr, err := a.userRepo.GetUser(context.Background(), user.Email)
 	if err != nil {
 		if errors.Is(err, users_db.ErrUserNotFound) {
 			log.Debug("UserInfo not found", "user", user)
@@ -47,15 +50,23 @@ func (a *AuthService) Authentication(user *models.AuthUser) (models.UserTokens, 
 	if !ok {
 		return models.UserTokens{}, ErrWrongPassword
 	}
-	access_token, err = jwt_tokens.CreateAccessToken(usr.ID, a.secretKey, a.log)
+	accessToken, err := jwt_tokens.CreateAccessToken(usr.ID, a.secretKey, a.log)
 	if err != nil {
 		log.Error("Error while creating access token", "err", err)
 		return models.UserTokens{}, err
 	}
-	resresh_token, err = jwt_tokens.CreateRefreshToken(a.log)
+	refreshToken, err := jwt_tokens.CreateRefreshToken(a.log)
 	if err != nil {
 		log.Error("Error while creating refresh token", "err", err)
 		return models.UserTokens{}, err
 	}
-	//	TODO Сделать функцию записи токенов в БД
+	err = a.tokensRepo.DbPutTokens(context.Background(), usr.ID, accessToken, refreshToken)
+	if err != nil {
+		log.Error("Error while storing tokens", "err", err)
+		return models.UserTokens{}, err
+	}
+	return models.UserTokens{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }

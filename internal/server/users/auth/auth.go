@@ -4,7 +4,8 @@ import (
 	"booker/internal/lib/api/models"
 	resp "booker/internal/lib/api/response"
 	"booker/internal/lib/services"
-	"booker/internal/server/users/users_db"
+	"booker/internal/storage/database/repositories/auth_db"
+	"booker/internal/storage/database/repositories/users_db"
 	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
@@ -25,7 +26,7 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 			slog.String("url", r.URL.Path),
 		)
 		// Инициализируем сервис аутентификации
-		authService := services.NewAuthService(users_db.NewUsersDB(dbPool, log), log, secretKey)
+		authService := services.NewAuthService(users_db.NewUsersDB(dbPool, log), auth_db.NewTokensRepositoryImpl(dbPool, log), log, secretKey)
 
 		var user models.AuthUser
 		//Парсим тело запроса из json
@@ -42,7 +43,8 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, resp.ValidationError(validationErrors))
 		}
-		userInfo, err := authService.Authentication(&user)
+		//TODO Посмотреть что можно сделать с телом ответа при валидации полей (приходит 2 json)
+		authTokens, err := authService.Authentication(&user)
 		if err != nil {
 			if errors.Is(err, users_db.ErrUserNotFound) {
 				log.Debug("User not found", "user", user)
@@ -60,8 +62,12 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 			render.JSON(w, r, resp.Error(err.Error()))
 			return
 		}
-
-		//	TODO Добавить вывод ответа с токенами
+		log.Debug("User authenticated", "user", user)
+		render.Status(r, http.StatusOK)
+		render.JSON(w, r, models.UserTokens{
+			AccessToken:  authTokens.AccessToken,
+			RefreshToken: authTokens.RefreshToken,
+		})
 
 	}
 }

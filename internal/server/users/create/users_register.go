@@ -4,7 +4,7 @@ import (
 	"booker/internal/lib/api/models"
 	resp "booker/internal/lib/api/response"
 	users2 "booker/internal/server/users"
-	"booker/internal/server/users/users_db"
+	"booker/internal/storage/database/repositories/users_db"
 	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"

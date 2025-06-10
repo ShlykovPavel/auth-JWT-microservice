@@ -2,6 +2,7 @@ package main
 
 import (
 	"booker/internal/config"
+	"booker/internal/server/users/auth"
 	"booker/internal/server/users/create"
 	"booker/internal/storage/database"
 	"context"
@@ -49,6 +50,7 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	router.Post("/user/register", users.CreateUser(logger, poll))
+	router.Post("/login", auth.AuthenticationHandler(logger, poll, cfg.JWTSecretKey))
 
 	logger.Info("Starting HTTP server", slog.String("adress", cfg.Address))
 	// Run server
