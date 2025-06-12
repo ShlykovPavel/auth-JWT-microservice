@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    access_token VARCHAR(256) NOT NULL ,
+    refresh_token VARCHAR(128) NOT NULL
+)

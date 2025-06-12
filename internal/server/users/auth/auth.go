@@ -25,8 +25,11 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 			slog.String("url", r.URL.Path),
 		)
+
+		userRepository := users_db.NewUsersDB(dbPool, log)
+		tokensRepository := auth_db.NewTokensRepositoryImpl(dbPool, log)
 		// Инициализируем сервис аутентификации
-		authService := services.NewAuthService(users_db.NewUsersDB(dbPool, log), auth_db.NewTokensRepositoryImpl(dbPool, log), log, secretKey)
+		authService := services.NewAuthService(userRepository, tokensRepository, log, secretKey)
 
 		var user models.AuthUser
 		//Парсим тело запроса из json

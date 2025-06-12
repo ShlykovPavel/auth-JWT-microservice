@@ -8,11 +8,6 @@ import (
 	"strconv"
 )
 
-type Tokens struct {
-	access_token  string
-	refresh_token string
-}
-
 type TokensRepository interface {
 	DbPutTokens(ctx context.Context, userId int64, accessToken string, refreshToken string) error
 }

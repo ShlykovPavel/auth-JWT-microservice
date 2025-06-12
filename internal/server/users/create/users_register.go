@@ -3,7 +3,7 @@ package users
 import (
 	"booker/internal/lib/api/models"
 	resp "booker/internal/lib/api/response"
-	users2 "booker/internal/server/users"
+	users "booker/internal/server/users"
 	"booker/internal/storage/database/repositories/users_db"
 	"errors"
 	"github.com/go-chi/chi/v5/middleware"
@@ -43,7 +43,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		//	Хешируем пароль
-		passwordHash, err := users2.HashUserPassword(user.Password, log)
+		passwordHash, err := users.HashUserPassword(user.Password, log)
 		if err != nil {
 			log.Error("Error while hashing password", "err", err)
 			render.Status(r, http.StatusInternalServerError)
