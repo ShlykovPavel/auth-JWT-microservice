@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"log/slog"
 	"strconv"
@@ -37,17 +38,18 @@ func CreateAccessToken(userID int64, secretKey string, log *slog.Logger) (string
 	return tokenString, nil
 }
 
+// VerifyToken verifies a JWT token and returns its claims
 func VerifyToken(tokenString string, secretKey string) (jwt.MapClaims, error) {
 	// Парсим токен
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Проверяем алгоритм подписи
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(secretKey), nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse token: %w", err)
 	}
 	// Проверяем, валиден ли токен
 	if !token.Valid {
