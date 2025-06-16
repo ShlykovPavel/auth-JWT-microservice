@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"booker/internal/lib/api/models"
+	"booker/internal/lib/api/models/users/get_user"
 	resp "booker/internal/lib/api/response"
 	"booker/internal/lib/services"
 	"booker/internal/storage/database/repositories/auth_db"
@@ -31,7 +31,7 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 		// Инициализируем сервис аутентификации
 		authService := services.NewAuthService(userRepository, tokensRepository, log, secretKey)
 
-		var user models.AuthUser
+		var user get_user.AuthUser
 		//Парсим тело запроса из json
 		if err := render.DecodeJSON(r.Body, &user); err != nil {
 			log.Error("Error while decoding request body", "err", err)
@@ -67,7 +67,7 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 		}
 		log.Debug("User authenticated", "user", user)
 		render.Status(r, http.StatusOK)
-		render.JSON(w, r, models.UserTokens{
+		render.JSON(w, r, get_user.UserTokens{
 			AccessToken:  authTokens.AccessToken,
 			RefreshToken: authTokens.RefreshToken,
 		})

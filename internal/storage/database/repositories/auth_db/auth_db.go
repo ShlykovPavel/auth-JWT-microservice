@@ -10,6 +10,7 @@ import (
 
 type TokensRepository interface {
 	DbPutTokens(ctx context.Context, userId int64, accessToken string, refreshToken string) error
+	DbGetTokens(ctx context.Context, accessToken string, refreshToken string) (int64, error)
 }
 type TokensRepositoryImpl struct {
 	db  *pgxpool.Pool
@@ -39,3 +40,23 @@ func (r *TokensRepositoryImpl) DbPutTokens(ctx context.Context, userId int64, ac
 	}
 	return nil
 }
+
+func (r *TokensRepositoryImpl) DbGetTokens(ctx context.Context, accessToken string, refreshToken string) (int64, error) {
+	const op = "internal/storage/database/repositories/auth_db/auth_db.go/db.DbGetTokens"
+	log := r.log.With(
+		slog.String("operation", op),
+		slog.String("access_token", accessToken),
+		slog.String("refresh_token", refreshToken))
+	query := `SELECT user_id FROM tokens WHERE access_token  = $1 AND refresh_token = $2`
+	var userId int64
+	err := r.db.QueryRow(ctx, query, accessToken, refreshToken).Scan(&userId)
+	if err != nil {
+		log.Error("Error while get tokens", "err", err.Error())
+		return 0, database.PsqlErrorHandler(err)
+	}
+	return userId, nil
+}
+
+//func (r *TokensRepositoryImpl) DbUpdateTokens(ctx context.Context, accessToken string, refreshToken string) error {
+//	//	TODO написать функцию обновления строкчик токена по юзер айди
+//}

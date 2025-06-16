@@ -26,6 +26,7 @@ func CreateAccessToken(userID int64, secretKey string, log *slog.Logger) (string
 		"sub": userID,                           // Идентификатор пользователя
 		"iat": time.Now().Unix(),                // Время выпуска токена
 		"exp": time.Now().Add(time.Hour).Unix(), // Время истечения (1 час)
+		//	TODO Потом вынести время истечения в конфиг
 	}
 	// Создаем токен с алгоритмом HS256
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -67,11 +68,11 @@ func CreateRefreshToken(log *slog.Logger) (string, error) {
 	log = log.With(
 		slog.String("op", "internal/lib/jwt_tokens/jwt_token.go/CreateRefreshToken"),
 	)
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
+	byteArray := make([]byte, 32)
+	_, err := rand.Read(byteArray)
 	if err != nil {
 		return "", err
 	}
 	// Кодируем в base64 и обрезаем до нужной длины
-	return base64.URLEncoding.EncodeToString(b)[:32], nil
+	return base64.URLEncoding.EncodeToString(byteArray)[:32], nil
 }

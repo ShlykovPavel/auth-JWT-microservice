@@ -1,7 +1,7 @@
 package users_db
 
 import (
-	"booker/internal/lib/api/models"
+	"booker/internal/lib/api/models/users/create_user"
 	"booker/internal/storage/database"
 	"context"
 	"errors"
@@ -15,7 +15,7 @@ var ErrEmailAlreadyExists = errors.New("Пользователь с email уже
 var ErrUserNotFound = errors.New("Пользователь не найден ")
 
 type UserRepository interface {
-	CreateUser(ctx context.Context, userinfo *models.UserCreate) (int64, error)
+	CreateUser(ctx context.Context, userinfo *create_user.UserCreate) (int64, error)
 	GetUser(ctx context.Context, userEmail string) (UserInfo, error)
 }
 
@@ -46,7 +46,7 @@ func NewUsersDB(dbPoll *pgxpool.Pool, log *slog.Logger) *UserRepositoryImpl {
 // userinfo - структуру UserInfo с необходимыми полями для добавления
 //
 // После запроса возвращается Id созданного пользователя
-func (us *UserRepositoryImpl) CreateUser(ctx context.Context, userinfo *models.UserCreate) (int64, error) {
+func (us *UserRepositoryImpl) CreateUser(ctx context.Context, userinfo *create_user.UserCreate) (int64, error) {
 	query := `
 INSERT INTO users (first_name, last_name, email, password)
 VALUES ($1, $2, $3, $4)

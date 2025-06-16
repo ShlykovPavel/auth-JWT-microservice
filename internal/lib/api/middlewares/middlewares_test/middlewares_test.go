@@ -32,13 +32,13 @@ func TestAuthMiddleware(t *testing.T) {
 			//Инициализируем логгер
 			log := slog.Default()
 			// Создаём тестовый запрос
-			req := httptest.NewRequest(http.MethodGet, "/url", nil)
+			request := httptest.NewRequest(http.MethodGet, "/url", nil)
 			if test.AuthHeader != "" {
-				req.Header.Set("Authorization", test.AuthHeader)
+				request.Header.Set("Authorization", test.AuthHeader)
 			}
 
 			// Инициализируем переменную для чтения ответа от сервера
-			rr := httptest.NewRecorder()
+			responseRecorder := httptest.NewRecorder()
 			//Следующий обработчик который вызывается при успешной авторизации
 			nextCalled := false
 			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,11 +51,11 @@ func TestAuthMiddleware(t *testing.T) {
 			handler := middleware(next)
 
 			//	Метод для вызова нашего созданного запроса и ответа
-			handler.ServeHTTP(rr, req)
+			handler.ServeHTTP(responseRecorder, request)
 
 			// Проверяем статус
-			if rr.Code != test.expectedStatusCode {
-				t.Errorf("expected status %d, got %d", test.expectedStatusCode, rr.Code)
+			if responseRecorder.Code != test.expectedStatusCode {
+				t.Errorf("expected status %d, got %d", test.expectedStatusCode, responseRecorder.Code)
 			}
 
 			// Проверяем тело ответа
@@ -63,14 +63,14 @@ func TestAuthMiddleware(t *testing.T) {
 				var gotResp struct {
 					Error string `json:"error"`
 				}
-				if err := json.NewDecoder(rr.Body).Decode(&gotResp); err != nil {
+				if err := json.NewDecoder(responseRecorder.Body).Decode(&gotResp); err != nil {
 					t.Errorf("failed to decode response: %v", err)
 				}
 				if gotResp.Error != test.ExpectedBody {
 					t.Errorf("expected error message %q, got %q", test.ExpectedBody, gotResp.Error)
 				}
 			} else {
-				if gotBody := strings.TrimSpace(rr.Body.String()); gotBody != test.ExpectedBody {
+				if gotBody := strings.TrimSpace(responseRecorder.Body.String()); gotBody != test.ExpectedBody {
 					t.Errorf("expected body %q, got %q", test.ExpectedBody, gotBody)
 				}
 			}
@@ -82,7 +82,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 			// Проверяем Content-Type для ошибок
 			if test.expectedStatusCode == http.StatusUnauthorized {
-				if contentType := rr.Header().Get("Content-Type"); contentType != "application/json" {
+				if contentType := responseRecorder.Header().Get("Content-Type"); contentType != "application/json" {
 					t.Errorf("expected Content-Type %q, got %q", "application/json", contentType)
 				}
 			}

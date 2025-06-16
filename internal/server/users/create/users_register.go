@@ -1,7 +1,7 @@
 package users
 
 import (
-	"booker/internal/lib/api/models"
+	usersDto "booker/internal/lib/api/models/users/create_user"
 	resp "booker/internal/lib/api/response"
 	users "booker/internal/server/users"
 	"booker/internal/storage/database/repositories/users_db"
@@ -23,7 +23,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 			slog.String("url", r.URL.Path))
 		usrCreate := users_db.NewUsersDB(dbPoll, log)
 
-		var user models.UserCreate
+		var user usersDto.UserCreate
 		err := render.DecodeJSON(r.Body, &user)
 		if err != nil {
 			log.Error("Error while decoding request body", "err", err)
@@ -70,7 +70,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 
 		log.Info("Created user", "user id", userId)
 		render.Status(r, http.StatusCreated)
-		render.JSON(w, r, models.CreateUserResponse{
+		render.JSON(w, r, usersDto.CreateUserResponse{
 			resp.OK(),
 			userId,
 		})
