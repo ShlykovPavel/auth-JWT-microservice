@@ -1,6 +1,6 @@
 package refresh_tokens
 
 type RefreshTokensDto struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string `json:"access_token" validate:"required,min=3"`
+	RefreshToken string `json:"refresh_token" validate:"required,min=3"`
 }

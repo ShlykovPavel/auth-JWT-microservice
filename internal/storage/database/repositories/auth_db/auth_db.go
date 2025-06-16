@@ -9,8 +9,9 @@ import (
 )
 
 type TokensRepository interface {
-	DbPutTokens(ctx context.Context, userId int64, accessToken string, refreshToken string) error
-	DbGetTokens(ctx context.Context, accessToken string, refreshToken string) (int64, error)
+	DbPutTokens(ctx context.Context, userId int64, refreshToken string) error
+	DbGetTokens(ctx context.Context, refreshToken string) (int64, error)
+	DbUpdateTokens(ctx context.Context, userId int64, refreshToken string) error
 }
 type TokensRepositoryImpl struct {
 	db  *pgxpool.Pool
@@ -24,16 +25,15 @@ func NewTokensRepositoryImpl(db *pgxpool.Pool, log *slog.Logger) *TokensReposito
 	}
 }
 
-func (r *TokensRepositoryImpl) DbPutTokens(ctx context.Context, userId int64, accessToken string, refreshToken string) error {
+func (r *TokensRepositoryImpl) DbPutTokens(ctx context.Context, userId int64, refreshToken string) error {
 	const op = "internal/storage/database/repositories/auth_db/auth_db.go/db.PutTokens"
 	log := r.log.With(
 		slog.String("operation", op),
 		slog.String("User_id", strconv.FormatInt(userId, 10)),
-		slog.String("access_token", accessToken),
 		slog.String("refresh_token", refreshToken))
 
-	query := `INSERT INTO tokens(user_id, access_token, refresh_token) VALUES($1, $2, $3)`
-	_, err := r.db.Exec(ctx, query, userId, accessToken, refreshToken)
+	query := `INSERT INTO tokens(user_id, refresh_token) VALUES($1, $2)`
+	_, err := r.db.Exec(ctx, query, userId, refreshToken)
 	if err != nil {
 		log.Error("Error while put tokens in db", "err", err.Error())
 		return database.PsqlErrorHandler(err)
@@ -41,15 +41,14 @@ func (r *TokensRepositoryImpl) DbPutTokens(ctx context.Context, userId int64, ac
 	return nil
 }
 
-func (r *TokensRepositoryImpl) DbGetTokens(ctx context.Context, accessToken string, refreshToken string) (int64, error) {
+func (r *TokensRepositoryImpl) DbGetTokens(ctx context.Context, refreshToken string) (int64, error) {
 	const op = "internal/storage/database/repositories/auth_db/auth_db.go/db.DbGetTokens"
 	log := r.log.With(
 		slog.String("operation", op),
-		slog.String("access_token", accessToken),
 		slog.String("refresh_token", refreshToken))
-	query := `SELECT user_id FROM tokens WHERE access_token  = $1 AND refresh_token = $2`
+	query := `SELECT user_id FROM tokens WHERE refresh_token = $1`
 	var userId int64
-	err := r.db.QueryRow(ctx, query, accessToken, refreshToken).Scan(&userId)
+	err := r.db.QueryRow(ctx, query, refreshToken).Scan(&userId)
 	if err != nil {
 		log.Error("Error while get tokens", "err", err.Error())
 		return 0, database.PsqlErrorHandler(err)
@@ -57,6 +56,16 @@ func (r *TokensRepositoryImpl) DbGetTokens(ctx context.Context, accessToken stri
 	return userId, nil
 }
 
-//func (r *TokensRepositoryImpl) DbUpdateTokens(ctx context.Context, accessToken string, refreshToken string) error {
-//	//	TODO написать функцию обновления строкчик токена по юзер айди
-//}
+func (r *TokensRepositoryImpl) DbUpdateTokens(ctx context.Context, userId int64, refreshToken string) error {
+	const op = "internal/storage/database/repositories/auth_db/auth_db.go/DbUpdateTokens"
+	log := r.log.With(
+		slog.String("operation", op),
+	)
+	query := `UPDATE tokens SET refresh_token = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2`
+	_, err := r.db.Exec(ctx, query, refreshToken, userId)
+	if err != nil {
+		log.Error("Error while update tokens", "err", err.Error())
+		return database.PsqlErrorHandler(err)
+	}
+	return nil
+}
