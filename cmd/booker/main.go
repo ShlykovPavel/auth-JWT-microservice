@@ -1,9 +1,10 @@
 package main
 
 import (
-	"booker/config"
-	users "booker/server/users/create"
-	"booker/storage/database"
+	"booker/internal/config"
+	"booker/internal/server/users/auth"
+	"booker/internal/server/users/create"
+	"booker/internal/storage/database"
 	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
@@ -49,6 +50,8 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	router.Post("/user/register", users.CreateUser(logger, poll))
+	//TODO Сделать отработку сценария логина, при наличии токенов авторизации (стереть старые токены и создать новые)
+	router.Post("/login", auth.AuthenticationHandler(logger, poll, cfg.JWTSecretKey))
 
 	logger.Info("Starting HTTP server", slog.String("adress", cfg.Address))
 	// Run server

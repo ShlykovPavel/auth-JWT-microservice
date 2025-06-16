@@ -1,9 +1,10 @@
 package users
 
 import (
-	"booker/lib/api/models"
-	resp "booker/lib/api/response"
-	"booker/server/users"
+	usersDto "booker/internal/lib/api/models/users/create_user"
+	resp "booker/internal/lib/api/response"
+	users "booker/internal/server/users"
+	"booker/internal/storage/database/repositories/users_db"
 	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
@@ -13,8 +14,6 @@ import (
 	"net/http"
 )
 
-// User Структура пользователя для создания
-
 func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users.CreateUser"
@@ -22,9 +21,9 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 			slog.String("operation", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 			slog.String("url", r.URL.Path))
-		usrCreate := users.NewUsersDB(dbPoll)
+		usrCreate := users_db.NewUsersDB(dbPoll, log)
 
-		var user models.UserCreate
+		var user usersDto.UserCreate
 		err := render.DecodeJSON(r.Body, &user)
 		if err != nil {
 			log.Error("Error while decoding request body", "err", err)
@@ -54,10 +53,10 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 
 		user.Password = passwordHash
 		//Записываем в бд
-		userId, err := usrCreate.Create(r.Context(), &user)
+		userId, err := usrCreate.CreateUser(r.Context(), &user)
 		if err != nil {
 			log.Error("Error while creating user", "err", err)
-			if errors.Is(err, users.ErrEmailAlreadyExists) {
+			if errors.Is(err, users_db.ErrEmailAlreadyExists) {
 				render.Status(r, http.StatusBadRequest)
 				render.JSON(w, r, resp.Error(
 					err.Error()))
@@ -71,7 +70,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 
 		log.Info("Created user", "user id", userId)
 		render.Status(r, http.StatusCreated)
-		render.JSON(w, r, models.CreateUserResponse{
+		render.JSON(w, r, usersDto.CreateUserResponse{
 			resp.OK(),
 			userId,
 		})
