@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"booker/internal/lib/api/models/tokens/refresh_tokens"
 	"booker/internal/lib/api/models/users/get_user"
 	resp "booker/internal/lib/api/response"
 	"booker/internal/lib/services"
@@ -54,8 +55,7 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 				render.Status(r, http.StatusUnauthorized)
 				render.JSON(w, r, resp.Error(ErrIncorrectCredentials.Error()))
 				return
-			}
-			if errors.Is(err, services.ErrWrongPassword) {
+			} else if errors.Is(err, services.ErrWrongPassword) {
 				log.Debug("Password is incorrect", "user", user)
 				render.Status(r, http.StatusUnauthorized)
 				render.JSON(w, r, resp.Error(ErrIncorrectCredentials.Error()))
@@ -67,7 +67,7 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 		}
 		log.Debug("User authenticated", "user", user)
 		render.Status(r, http.StatusOK)
-		render.JSON(w, r, get_user.UserTokens{
+		render.JSON(w, r, refresh_tokens.RefreshTokensDto{
 			AccessToken:  authTokens.AccessToken,
 			RefreshToken: authTokens.RefreshToken,
 		})

@@ -12,6 +12,7 @@ type TokensRepository interface {
 	DbPutTokens(ctx context.Context, userId int64, refreshToken string) error
 	DbGetTokens(ctx context.Context, refreshToken string) (int64, error)
 	DbUpdateTokens(ctx context.Context, userId int64, refreshToken string) error
+	DbDeleteToken(ctx context.Context, refreshToken string) error
 }
 type TokensRepositoryImpl struct {
 	db  *pgxpool.Pool
@@ -65,6 +66,20 @@ func (r *TokensRepositoryImpl) DbUpdateTokens(ctx context.Context, userId int64,
 	_, err := r.db.Exec(ctx, query, refreshToken, userId)
 	if err != nil {
 		log.Error("Error while update tokens", "err", err.Error())
+		return database.PsqlErrorHandler(err)
+	}
+	return nil
+}
+
+func (r *TokensRepositoryImpl) DbDeleteToken(ctx context.Context, refreshToken string) error {
+	const op = "internal/storage/database/repositories/auth_db/auth_db.go/DbDeleteToken"
+	log := r.log.With(
+		slog.String("operation", op),
+	)
+	query := `DELETE FROM tokens WHERE refresh_token = $1`
+	_, err := r.db.Exec(ctx, query, refreshToken)
+	if err != nil {
+		log.Error("Error while delete token", "err", err.Error())
 		return database.PsqlErrorHandler(err)
 	}
 	return nil

@@ -40,6 +40,7 @@ func AuthMiddleware(secretKey string, log *slog.Logger) func(next http.Handler) 
 			}
 			log.Debug("Authorization token is valid")
 			next.ServeHTTP(w, r)
+
 		})
 
 	}

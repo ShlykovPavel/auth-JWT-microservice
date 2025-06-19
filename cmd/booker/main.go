@@ -52,6 +52,7 @@ func main() {
 	router.Post("/user/register", users.CreateUser(logger, poll))
 	router.Post("/login", auth.AuthenticationHandler(logger, poll, cfg.JWTSecretKey))
 	router.Post("/refresh", auth.RefreshTokenHandler(logger, poll, cfg.JWTSecretKey))
+	router.Post("/logout", auth.LogoutHandler(logger, poll, cfg.JWTSecretKey))
 
 	logger.Info("Starting HTTP server", slog.String("adress", cfg.Address))
 	// Run server
