@@ -4,6 +4,7 @@ import (
 	"booker/internal/config"
 	"booker/internal/server/users/auth"
 	"booker/internal/server/users/create"
+	"booker/internal/server/users/roles"
 	"booker/internal/storage/database"
 	"context"
 	"fmt"
@@ -39,9 +40,10 @@ func main() {
 	}
 
 	poll, err := database.CreatePool(context.Background(), &dbConfig, logger)
-	err = database.CreateTables(poll, logger)
+
+	err = roles.CheckAdminInDB(poll, logger)
 	if err != nil {
-		panic(err)
+		logger.Error("Failed to check admin in database", "error", err)
 	}
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)

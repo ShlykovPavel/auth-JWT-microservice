@@ -17,6 +17,8 @@ var ErrUserNotFound = errors.New("Пользователь не найден ")
 type UserRepository interface {
 	CreateUser(ctx context.Context, userinfo *create_user.UserCreate) (int64, error)
 	GetUser(ctx context.Context, userEmail string) (UserInfo, error)
+	CheckAdminInDB(ctx context.Context) (UserInfo, error)
+	AddFirstAdmin(ctx context.Context) error
 }
 
 type UserRepositoryImpl struct {
@@ -31,6 +33,7 @@ type UserInfo struct {
 	LastName     string
 	Email        string
 	PasswordHash string
+	role         string
 }
 
 func NewUsersDB(dbPoll *pgxpool.Pool, log *slog.Logger) *UserRepositoryImpl {
@@ -74,7 +77,8 @@ func (us *UserRepositoryImpl) GetUser(ctx context.Context, userEmail string) (Us
 		&user.FirstName,
 		&user.LastName,
 		&user.Email,
-		&user.PasswordHash)
+		&user.PasswordHash,
+		&user.role)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return UserInfo{}, ErrUserNotFound
 	}
@@ -83,4 +87,36 @@ func (us *UserRepositoryImpl) GetUser(ctx context.Context, userEmail string) (Us
 		return UserInfo{}, dbErr
 	}
 	return user, nil
+}
+
+func (us *UserRepositoryImpl) CheckAdminInDB(ctx context.Context) (UserInfo, error) {
+	query := `SELECT id, first_name, last_name, email, password FROM users WHERE role LIKE '%admin%'`
+
+	var user UserInfo
+	err := us.db.QueryRow(ctx, query).Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.PasswordHash,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return UserInfo{}, nil
+	}
+	if err != nil {
+		dbErr := database.PsqlErrorHandler(err)
+		return UserInfo{}, dbErr
+	}
+	return user, nil
+}
+
+func (us *UserRepositoryImpl) AddFirstAdmin(ctx context.Context) error {
+	query := `INSERT INTO users (id, first_name, last_name, email, password, role) VALUES ($1, $2, $3, $4, $5, $6)`
+
+	_, err := us.db.Exec(ctx, query, 0, "Admin first name", "Admin last name", "admin@admin.com", "password", "admin")
+	if err != nil {
+		dbErr := database.PsqlErrorHandler(err)
+		return dbErr
+	}
+	return nil
 }
