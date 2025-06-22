@@ -14,11 +14,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 var ErrIncorrectCredentials = errors.New("invalid email or password")
 
-func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string) http.HandlerFunc {
+func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string, jwtDuration time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users/auth/AuthentificationHandler"
 		log = log.With(
@@ -30,7 +31,7 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 		userRepository := users_db.NewUsersDB(dbPool, log)
 		tokensRepository := auth_db.NewTokensRepositoryImpl(dbPool, log)
 		// Инициализируем сервис аутентификации
-		authService := services.NewAuthService(userRepository, tokensRepository, log, secretKey)
+		authService := services.NewAuthService(userRepository, tokensRepository, log, secretKey, jwtDuration)
 
 		var user get_user.AuthUser
 		//Парсим тело запроса из json

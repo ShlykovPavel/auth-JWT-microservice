@@ -52,9 +52,9 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	router.Post("/user/register", users.CreateUser(logger, poll))
-	router.Post("/login", auth.AuthenticationHandler(logger, poll, cfg.JWTSecretKey))
-	router.Post("/refresh", auth.RefreshTokenHandler(logger, poll, cfg.JWTSecretKey))
-	router.Post("/logout", auth.LogoutHandler(logger, poll, cfg.JWTSecretKey))
+	router.Post("/login", auth.AuthenticationHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
+	router.Post("/refresh", auth.RefreshTokenHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
+	router.Post("/logout", auth.LogoutHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
 
 	logger.Info("Starting HTTP server", slog.String("adress", cfg.Address))
 	// Run server

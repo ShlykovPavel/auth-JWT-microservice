@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func CreateAccessToken(userID int64, secretKey string, log *slog.Logger) (string, error) {
+func CreateAccessToken(userID int64, secretKey string, userRole string, duration time.Duration, log *slog.Logger) (string, error) {
 	const op = "internal/lib/jwt_tokens/jwt_token.go/CreateAccessToken"
 	log = log.With(
 		slog.String("op", op),
@@ -23,9 +23,10 @@ func CreateAccessToken(userID int64, secretKey string, log *slog.Logger) (string
 	}
 	// Создаем claims
 	claims := jwt.MapClaims{
-		"sub": userID,                           // Идентификатор пользователя
-		"iat": time.Now().Unix(),                // Время выпуска токена
-		"exp": time.Now().Add(time.Hour).Unix(), // Время истечения (1 час)
+		"user_role": userRole,
+		"sub":       userID,                          // Идентификатор пользователя
+		"iat":       time.Now().Unix(),               // Время выпуска токена
+		"exp":       time.Now().Add(duration).Unix(), // Время истечения (1 час)
 		//	TODO Потом вынести время истечения в конфиг
 	}
 	// Создаем токен с алгоритмом HS256

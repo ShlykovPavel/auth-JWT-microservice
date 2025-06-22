@@ -14,9 +14,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
-func LogoutHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string) http.HandlerFunc {
+func LogoutHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string, jwtDuration time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users/auth/LogoutHandler"
 		log = log.With(
@@ -26,7 +27,7 @@ func LogoutHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string) htt
 		usersRepository := users_db.NewUsersDB(dbPool, log)
 		tokensRepository := auth_db.NewTokensRepositoryImpl(dbPool, log)
 		// Инициализируем сервис аутентификации
-		authService := services.NewAuthService(usersRepository, tokensRepository, log, secretKey)
+		authService := services.NewAuthService(usersRepository, tokensRepository, log, secretKey, jwtDuration)
 
 		// Декодируем json в структуру дто
 		var logoutDto tokens.LogoutRequest

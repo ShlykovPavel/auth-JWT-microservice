@@ -28,3 +28,15 @@ func CheckAdminInDB(poll *pgxpool.Pool, log *slog.Logger) error {
 	log.Info("admin role check ok. no need to create admin role")
 	return nil
 }
+
+//TODO Добавить после проверки на роль админа (поинт может прожать только с ролью админ
+//func SetAdminRole(poll  *pgxpool.Pool, log *slog.Logger) http.HandlerFunc  {
+//	return func(w http.ResponseWriter, r *http.Request) {
+//		userRepository := users_db.NewUsersDB(poll, log)
+//
+//		err := userRepository.SetAdminRole(context.Background(), id)
+//
+//	}
+//
+//
+//}

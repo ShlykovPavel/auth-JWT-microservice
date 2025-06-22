@@ -33,7 +33,7 @@ type UserInfo struct {
 	LastName     string
 	Email        string
 	PasswordHash string
-	role         string
+	Role         string
 }
 
 func NewUsersDB(dbPoll *pgxpool.Pool, log *slog.Logger) *UserRepositoryImpl {
@@ -51,7 +51,7 @@ func NewUsersDB(dbPoll *pgxpool.Pool, log *slog.Logger) *UserRepositoryImpl {
 // После запроса возвращается Id созданного пользователя
 func (us *UserRepositoryImpl) CreateUser(ctx context.Context, userinfo *create_user.UserCreate) (int64, error) {
 	query := `
-INSERT INTO users (first_name, last_name, email, password, role)
+INSERT INTO users (first_name, last_name, email, password, Role)
 VALUES ($1, $2, $3, $4, 'user')
 RETURNING id`
 
@@ -69,7 +69,7 @@ RETURNING id`
 }
 
 func (us *UserRepositoryImpl) GetUser(ctx context.Context, userEmail string) (UserInfo, error) {
-	query := `SELECT id, first_name, last_name, email, password FROM users WHERE email = $1`
+	query := `SELECT id, first_name, last_name, email, password, role FROM users WHERE email = $1`
 
 	var user UserInfo
 	err := us.db.QueryRow(ctx, query, userEmail).Scan(
@@ -78,7 +78,7 @@ func (us *UserRepositoryImpl) GetUser(ctx context.Context, userEmail string) (Us
 		&user.LastName,
 		&user.Email,
 		&user.PasswordHash,
-		&user.role)
+		&user.Role)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return UserInfo{}, ErrUserNotFound
 	}
@@ -90,7 +90,7 @@ func (us *UserRepositoryImpl) GetUser(ctx context.Context, userEmail string) (Us
 }
 
 func (us *UserRepositoryImpl) CheckAdminInDB(ctx context.Context) (UserInfo, error) {
-	query := `SELECT id, first_name, last_name, email, password FROM users WHERE role LIKE '%admin%'`
+	query := `SELECT id, first_name, last_name, email, password FROM users WHERE Role LIKE '%admin%'`
 
 	var user UserInfo
 	err := us.db.QueryRow(ctx, query).Scan(
@@ -111,9 +111,20 @@ func (us *UserRepositoryImpl) CheckAdminInDB(ctx context.Context) (UserInfo, err
 }
 
 func (us *UserRepositoryImpl) AddFirstAdmin(ctx context.Context) error {
-	query := `INSERT INTO users (id, first_name, last_name, email, password, role) VALUES ($1, $2, $3, $4, $5, $6)`
+	query := `INSERT INTO users (id, first_name, last_name, email, password, Role) VALUES ($1, $2, $3, $4, $5, $6)`
 
 	_, err := us.db.Exec(ctx, query, 0, "Admin first name", "Admin last name", "admin@admin.com", "password", "admin")
+	if err != nil {
+		dbErr := database.PsqlErrorHandler(err)
+		return dbErr
+	}
+	return nil
+}
+
+// TODO Сделать после разработки midleware для проверки роли админа
+func (us *UserRepositoryImpl) SetAdminRole(ctx context.Context, id int64) error {
+	query := `UPDATE users SET Role = 'admin' WHERE id = $1`
+	_, err := us.db.Exec(ctx, query, id)
 	if err != nil {
 		dbErr := database.PsqlErrorHandler(err)
 		return dbErr
