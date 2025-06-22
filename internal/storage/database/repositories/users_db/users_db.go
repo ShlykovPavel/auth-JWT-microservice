@@ -51,8 +51,8 @@ func NewUsersDB(dbPoll *pgxpool.Pool, log *slog.Logger) *UserRepositoryImpl {
 // После запроса возвращается Id созданного пользователя
 func (us *UserRepositoryImpl) CreateUser(ctx context.Context, userinfo *create_user.UserCreate) (int64, error) {
 	query := `
-INSERT INTO users (first_name, last_name, email, password)
-VALUES ($1, $2, $3, $4)
+INSERT INTO users (first_name, last_name, email, password, role)
+VALUES ($1, $2, $3, $4, 'user')
 RETURNING id`
 
 	var id int64
