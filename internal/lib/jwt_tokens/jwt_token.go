@@ -27,7 +27,6 @@ func CreateAccessToken(userID int64, secretKey string, userRole string, duration
 		"sub":       userID,                          // Идентификатор пользователя
 		"iat":       time.Now().Unix(),               // Время выпуска токена
 		"exp":       time.Now().Add(duration).Unix(), // Время истечения (1 час)
-		//	TODO Потом вынести время истечения в конфиг
 	}
 	// Создаем токен с алгоритмом HS256
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
