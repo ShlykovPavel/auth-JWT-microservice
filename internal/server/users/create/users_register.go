@@ -27,8 +27,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		err := render.DecodeJSON(r.Body, &user)
 		if err != nil {
 			log.Error("Error while decoding request body", "err", err)
-			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, 400, resp.Error(err.Error()))
 			return
 		}
 
@@ -37,8 +36,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		if err = validator.New().Struct(&user); err != nil {
 			validationErrors := err.(validator.ValidationErrors)
 			log.Error("Error validating request body", "err", validationErrors)
-			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.ValidationError(validationErrors))
+			resp.RenderResponse(w, r, 400, resp.ValidationError(validationErrors))
 			return
 		}
 
@@ -46,8 +44,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		passwordHash, err := users.HashUserPassword(user.Password, log)
 		if err != nil {
 			log.Error("Error while hashing password", "err", err)
-			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, 500, resp.Error(err.Error()))
 			return
 		}
 
@@ -57,20 +54,16 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		if err != nil {
 			log.Error("Error while creating user", "err", err)
 			if errors.Is(err, users_db.ErrEmailAlreadyExists) {
-				render.Status(r, http.StatusBadRequest)
-				render.JSON(w, r, resp.Error(
+				resp.RenderResponse(w, r, 400, resp.Error(
 					err.Error()))
 				return
 			}
-			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, resp.Error(
-				err.Error()))
+			resp.RenderResponse(w, r, 500, resp.Error(err.Error()))
 			return
 		}
 
 		log.Info("Created user", "user id", userId)
-		render.Status(r, http.StatusCreated)
-		render.JSON(w, r, usersDto.CreateUserResponse{
+		resp.RenderResponse(w, r, 201, usersDto.CreateUserResponse{
 			resp.OK(),
 			userId,
 		})
