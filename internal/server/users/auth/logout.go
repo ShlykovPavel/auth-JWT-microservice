@@ -33,8 +33,7 @@ func LogoutHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string) htt
 		err := render.DecodeJSON(r.Body, &logoutDto)
 		if err != nil {
 			log.Error("Error while decoding json to RefreshTokensDto struct", "Error", err)
-			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.Error("Error while reading request body"))
+			resp.RenderResponse(w, r, 400, resp.Error("Error while reading request body"))
 			return
 		}
 
@@ -43,8 +42,7 @@ func LogoutHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string) htt
 		if err != nil {
 			validationErrors := err.(validator.ValidationErrors)
 			log.Error("Error while validating request body", "err", validationErrors)
-			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.ValidationError(validationErrors))
+			resp.RenderResponse(w, r, 400, resp.ValidationError(validationErrors))
 			return
 		}
 
@@ -52,13 +50,11 @@ func LogoutHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string) htt
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				log.Debug("Session not found", "refresh token", logoutDto.RefreshToken)
-				render.Status(r, http.StatusUnauthorized)
-				render.JSON(w, r, resp.Error(ErrSessionNotFound.Error()))
+				resp.RenderResponse(w, r, 401, resp.Error(ErrSessionNotFound.Error()))
 				return
 			}
 			log.Error("Error while delete token", "err", err)
-			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, 500, resp.Error(err.Error()))
 			return
 		}
 		log.Info("Logout successful, returning 204")

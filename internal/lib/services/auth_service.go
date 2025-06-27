@@ -2,7 +2,6 @@ package services
 
 import (
 	"booker/internal/lib/api/models/tokens"
-	"booker/internal/lib/api/models/tokens/refresh_tokens"
 	getUserDto "booker/internal/lib/api/models/users/get_user"
 	"booker/internal/lib/jwt_tokens"
 	"booker/internal/server/users"
@@ -31,7 +30,7 @@ func NewAuthService(db users_db.UserRepository, tokensRepo auth_db.TokensReposit
 	}
 }
 
-func (a *AuthService) Authentication(user *getUserDto.AuthUser) (refresh_tokens.RefreshTokensDto, error) {
+func (a *AuthService) Authentication(user *getUserDto.AuthUser) (tokens.RefreshTokensDto, error) {
 	const op = "server/users/auth/Authentification"
 	log := a.log.With(
 		slog.String("operation", op),
@@ -42,63 +41,63 @@ func (a *AuthService) Authentication(user *getUserDto.AuthUser) (refresh_tokens.
 	if err != nil {
 		if errors.Is(err, users_db.ErrUserNotFound) {
 			log.Debug("UserInfo not found", "user", user)
-			return refresh_tokens.RefreshTokensDto{}, err
+			return tokens.RefreshTokensDto{}, err
 		}
 		log.Error("Error while fetching user", "err", err)
-		return refresh_tokens.RefreshTokensDto{}, err
+		return tokens.RefreshTokensDto{}, err
 	}
 	// Проверяем что нам предоставили правильный пароль
 	ok := users.ComparePassword(usr.PasswordHash, user.Password, log)
 	if !ok {
-		return refresh_tokens.RefreshTokensDto{}, ErrWrongPassword
+		return tokens.RefreshTokensDto{}, ErrWrongPassword
 	}
 	accessToken, err := jwt_tokens.CreateAccessToken(usr.ID, a.secretKey, a.log)
 	if err != nil {
 		log.Error("Error while creating access token", "err", err)
-		return refresh_tokens.RefreshTokensDto{}, err
+		return tokens.RefreshTokensDto{}, err
 	}
 	refreshToken, err := jwt_tokens.CreateRefreshToken(a.log)
 	if err != nil {
 		log.Error("Error while creating refresh token", "err", err)
-		return refresh_tokens.RefreshTokensDto{}, err
+		return tokens.RefreshTokensDto{}, err
 	}
 	err = a.tokensRepo.DbPutTokens(context.Background(), usr.ID, refreshToken)
 	if err != nil {
 		log.Error("Error while storing tokens", "err", err)
-		return refresh_tokens.RefreshTokensDto{}, err
+		return tokens.RefreshTokensDto{}, err
 	}
-	return refresh_tokens.RefreshTokensDto{
+	return tokens.RefreshTokensDto{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
 }
 
-func (a *AuthService) RefreshTokens(tokens *refresh_tokens.RefreshTokensDto) (refresh_tokens.RefreshTokensDto, error) {
+func (a *AuthService) RefreshTokens(tokensForRefresh *tokens.RefreshTokensDto) (tokens.RefreshTokensDto, error) {
 	const op = "internal/lib/services/auth_service.go/RefreshTokens"
 	log := a.log.With(
 		slog.String("operation", op),
 	)
-	userId, err := a.tokensRepo.DbGetTokens(context.Background(), tokens.RefreshToken)
+	userId, err := a.tokensRepo.DbGetTokens(context.Background(), tokensForRefresh.RefreshToken)
 	if err != nil {
-		log.Error("Error while fetching tokens", "err", err)
-		return refresh_tokens.RefreshTokensDto{}, err
+		log.Error("Error while fetching tokensForRefresh", "err", err)
+		return tokens.RefreshTokensDto{}, err
 	}
 	accessToken, err := jwt_tokens.CreateAccessToken(userId, a.secretKey, a.log)
 	if err != nil {
 		log.Error("Error while creating access token", "err", err)
-		return refresh_tokens.RefreshTokensDto{}, err
+		return tokens.RefreshTokensDto{}, err
 	}
 	refreshToken, err := jwt_tokens.CreateRefreshToken(a.log)
 	if err != nil {
 		log.Error("Error while creating refresh token", "err", err)
-		return refresh_tokens.RefreshTokensDto{}, err
+		return tokens.RefreshTokensDto{}, err
 	}
 	err = a.tokensRepo.DbUpdateTokens(context.Background(), userId, refreshToken)
 	if err != nil {
-		log.Error("Error while storing tokens", "err", err)
-		return refresh_tokens.RefreshTokensDto{}, err
+		log.Error("Error while storing tokensForRefresh", "err", err)
+		return tokens.RefreshTokensDto{}, err
 	}
-	return refresh_tokens.RefreshTokensDto{
+	return tokens.RefreshTokensDto{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil

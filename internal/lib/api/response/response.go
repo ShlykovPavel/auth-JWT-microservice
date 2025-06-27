@@ -2,7 +2,9 @@ package response
 
 import (
 	"fmt"
+	"github.com/go-chi/render"
 	"github.com/go-playground/validator"
+	"net/http"
 	"strings"
 )
 
@@ -45,4 +47,12 @@ func ValidationError(errs validator.ValidationErrors) Response {
 		Status: StatusError,
 		Error:  strings.Join(errMsgs, ", "),
 	}
+}
+
+// RenderResponse sets the HTTP status code and renders the provided body as JSON.
+// The status should be a valid HTTP status code (e.g., http.StatusOK).
+// The body is any JSON-serializable object, such as resp.Error or a custom DTO.
+func RenderResponse(w http.ResponseWriter, r *http.Request, status int, body interface{}) {
+	render.Status(r, status)
+	render.JSON(w, r, body)
 }
