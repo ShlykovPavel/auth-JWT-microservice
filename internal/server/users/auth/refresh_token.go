@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"booker/internal/lib/api/models/tokens/refresh_tokens"
+	"booker/internal/lib/api/models/tokens"
 	resp "booker/internal/lib/api/response"
 	"booker/internal/lib/services"
 	"booker/internal/storage/database/repositories/auth_db"
@@ -21,20 +21,18 @@ var ErrSessionNotFound = errors.New("Session not found")
 func RefreshTokenHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string, jwtDuration time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users/auth/RefreshTokenHandler"
-		log = log.With(
-			slog.String("op", op))
+		log = log.With(slog.String("op", op))
 		usersRepository := users_db.NewUsersDB(dbPool, log)
 		tokensRepository := auth_db.NewTokensRepositoryImpl(dbPool, log)
 		// Инициализируем сервис аутентификации
 		authService := services.NewAuthService(usersRepository, tokensRepository, log, secretKey, jwtDuration)
 
 		// Декодируем json в структуру дто
-		var refreshDto refresh_tokens.RefreshTokensDto
+		var refreshDto tokens.RefreshTokensDto
 		err := render.DecodeJSON(r.Body, &refreshDto)
 		if err != nil {
 			log.Error("Error while decoding json to RefreshTokensDto struct", "Error", err)
-			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.Error("Error while reading request body"))
+			resp.RenderResponse(w, r, 400, resp.Error("Error while reading request body"))
 			return
 		}
 
@@ -43,8 +41,7 @@ func RefreshTokenHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey strin
 		if err != nil {
 			validationErrors := err.(validator.ValidationErrors)
 			log.Error("Error while validating request body", "err", validationErrors)
-			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, resp.ValidationError(validationErrors))
+			resp.RenderResponse(w, r, 400, resp.ValidationError(validationErrors))
 			return
 		}
 
@@ -52,18 +49,15 @@ func RefreshTokenHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey strin
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				log.Debug("Session not found", "refresh token", refreshDto.RefreshToken)
-				render.Status(r, http.StatusUnauthorized)
-				render.JSON(w, r, resp.Error(ErrSessionNotFound.Error()))
+				resp.RenderResponse(w, r, 401, resp.Error(ErrSessionNotFound.Error()))
 				return
 			}
 			log.Error("Error while updating tokens", "err", err)
-			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, 500, resp.Error(err.Error()))
 			return
 		}
 		//Возвращаем новые токены
-		render.Status(r, http.StatusOK)
-		render.JSON(w, r, refresh_tokens.RefreshTokensDto{AccessToken: newTokens.AccessToken, RefreshToken: newTokens.RefreshToken})
+		resp.RenderResponse(w, r, 200, tokens.RefreshTokensDto{AccessToken: newTokens.AccessToken, RefreshToken: newTokens.RefreshToken})
 		return
 	}
 }
