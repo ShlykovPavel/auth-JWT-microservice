@@ -55,6 +55,8 @@ func main() {
 	router.Post("/login", auth.AuthenticationHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
 	router.Post("/refresh", auth.RefreshTokenHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
 	router.Post("/logout", auth.LogoutHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
+	//TODO заверннуть этот метод под middleware авторизации
+	router.Patch("/users/{id}", roles.SetAdminRole(poll, logger))
 
 	logger.Info("Starting HTTP server", slog.String("adress", cfg.Address))
 	// Run server

@@ -121,7 +121,6 @@ func (us *UserRepositoryImpl) AddFirstAdmin(ctx context.Context) error {
 	return nil
 }
 
-// TODO Сделать после разработки midleware для проверки роли админа
 func (us *UserRepositoryImpl) SetAdminRole(ctx context.Context, id int64) error {
 	query := `UPDATE users SET Role = 'admin' WHERE id = $1`
 	_, err := us.db.Exec(ctx, query, id)

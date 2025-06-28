@@ -80,7 +80,7 @@ func (a *AuthService) RefreshTokens(tokensForRefresh *tokens.RefreshTokensDto) (
 	log := a.log.With(
 		slog.String("operation", op),
 	)
-	tokenData, err := a.tokensRepo.DbGetTokens(context.Background(), tokens.RefreshToken)
+	tokenData, err := a.tokensRepo.DbGetTokens(context.Background(), tokensForRefresh.RefreshToken)
 	if err != nil {
 		log.Error("Error while fetching tokensForRefresh", "err", err)
 		return tokens.RefreshTokensDto{}, err
@@ -95,7 +95,7 @@ func (a *AuthService) RefreshTokens(tokensForRefresh *tokens.RefreshTokensDto) (
 		log.Error("Error while creating refresh token", "err", err)
 		return tokens.RefreshTokensDto{}, err
 	}
-	err = a.tokensRepo.DbUpdateTokens(context.Background(), userId, refreshToken)
+	err = a.tokensRepo.DbUpdateTokens(context.Background(), tokenData.UserId, refreshToken, tokensForRefresh.RefreshToken)
 	if err != nil {
 		log.Error("Error while storing tokensForRefresh", "err", err)
 		return tokens.RefreshTokensDto{}, err
