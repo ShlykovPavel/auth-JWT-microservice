@@ -123,10 +123,13 @@ func (us *UserRepositoryImpl) AddFirstAdmin(ctx context.Context) error {
 
 func (us *UserRepositoryImpl) SetAdminRole(ctx context.Context, id int64) error {
 	query := `UPDATE users SET Role = 'admin' WHERE id = $1`
-	_, err := us.db.Exec(ctx, query, id)
+	result, err := us.db.Exec(ctx, query, id)
 	if err != nil {
 		dbErr := database.PsqlErrorHandler(err)
 		return dbErr
+	}
+	if result.RowsAffected() == 0 {
+		return ErrUserNotFound
 	}
 	return nil
 }

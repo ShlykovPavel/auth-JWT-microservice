@@ -2,6 +2,7 @@ package main
 
 import (
 	"booker/internal/config"
+	"booker/internal/lib/api/middlewares"
 	"booker/internal/server/users/auth"
 	"booker/internal/server/users/create"
 	"booker/internal/server/users/roles"
@@ -50,13 +51,15 @@ func main() {
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
-
+	router.Group(func(r chi.Router) {
+		r.Use(middlewares.AuthMiddleware(cfg.JWTSecretKey, logger))
+		r.Use(middlewares.AuthAdminMiddleware(cfg.JWTSecretKey, logger))
+		r.Patch("/users/{id}", roles.SetAdminRole(poll, logger))
+	})
 	router.Post("/user/register", users.CreateUser(logger, poll))
 	router.Post("/login", auth.AuthenticationHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
 	router.Post("/refresh", auth.RefreshTokenHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
 	router.Post("/logout", auth.LogoutHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
-	//TODO заверннуть этот метод под middleware авторизации
-	router.Patch("/users/{id}", roles.SetAdminRole(poll, logger))
 
 	logger.Info("Starting HTTP server", slog.String("adress", cfg.Address))
 	// Run server

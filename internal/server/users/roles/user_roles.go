@@ -48,9 +48,14 @@ func SetAdminRole(poll *pgxpool.Pool, log *slog.Logger) http.HandlerFunc {
 			return
 		}
 		userRepository := users_db.NewUsersDB(poll, log)
-		//TODO Баг. Нет ошибки если ввести несуществующий айди пользоватлея
 		err = userRepository.SetAdminRole(context.Background(), id)
 		if err != nil {
+			if errors.Is(err, users_db.ErrUserNotFound) {
+				log.Debug("user not found", "error", err)
+				resp.RenderResponse(w, r, 400, resp.Error("User not found"))
+				return
+			}
+
 			log.Error("error setting admin role", "error", err)
 			resp.RenderResponse(w, r, 500, resp.Error("Failed to set admin role"))
 			return

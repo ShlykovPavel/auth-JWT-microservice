@@ -54,5 +54,9 @@ func ValidationError(errs validator.ValidationErrors) Response {
 // The body is any JSON-serializable object, such as resp.Error or a custom DTO.
 func RenderResponse(w http.ResponseWriter, r *http.Request, status int, body interface{}) {
 	render.Status(r, status)
+	if body == nil {
+		render.JSON(w, r, struct{}{})
+		return
+	}
 	render.JSON(w, r, body)
 }

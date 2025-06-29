@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-chi/render"
+	"github.com/golang-jwt/jwt/v5"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -39,7 +40,7 @@ func AuthMiddleware(secretKey string, log *slog.Logger) func(next http.Handler) 
 				renderUnauthorized(w, r, log, fmt.Sprintf("Authorization token is invalid: %v", err))
 				return
 			}
-			log.Debug("Authorization token is valid")
+			log.Debug("Authorization token is valid", slog.Any("claims", claims))
 			ctx := context.WithValue(r.Context(), "tokenClaims", claims)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -63,7 +64,7 @@ func AuthAdminMiddleware(secretKey string, log *slog.Logger) func(next http.Hand
 		// Используем AuthMiddleware для проверки авторизации
 		return AuthMiddleware(secretKey, log)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Извлекаем claims из контекста
-			claims, ok := r.Context().Value("tokenClaims").(map[string]interface{})
+			claims, ok := r.Context().Value("tokenClaims").(jwt.MapClaims)
 			if !ok {
 				log.Error("Failed to retrieve claims from context")
 				render.Status(r, http.StatusInternalServerError)
@@ -71,17 +72,19 @@ func AuthAdminMiddleware(secretKey string, log *slog.Logger) func(next http.Hand
 				return
 			}
 
-			// Проверяем, является ли пользователь администратором
-			isAdmin, ok := claims["admin"].(bool)
-			if !ok || !isAdmin {
-				log.Error("User is not an admin")
-				render.Status(r, http.StatusForbidden)
-				render.JSON(w, r, resp.Error("Access denied: user is not an admin"))
-				return
+			value, ok := claims["user_role"].(string)
+			if !ok {
+				log.Error("Failed to retrieve user role from context", "user_role", claims["user_role"])
+				resp.RenderResponse(w, r, 403, nil)
 			}
-
-			log.Debug("User is authorized and has admin privileges")
-			next.ServeHTTP(w, r)
+			// Проверяем, является ли пользователь администратором
+			if value == "admin" {
+				log.Debug("User is authorized and has admin privileges")
+				next.ServeHTTP(w, r)
+			} else {
+				log.Debug("User is NOT authorized and has admin privileges")
+				resp.RenderResponse(w, r, 403, nil)
+			}
 		}))
 	}
 }
