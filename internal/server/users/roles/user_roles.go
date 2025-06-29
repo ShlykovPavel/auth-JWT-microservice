@@ -37,7 +37,7 @@ func CheckAdminInDB(poll *pgxpool.Pool, log *slog.Logger) error {
 		log.Error("error checking admin role", "error", err)
 		return err
 	}
-	log.Info("admin role check ok. no need to create admin role. Found admin:", user)
+	log.Info("admin role check ok. no need to create admin role. Found admin:", "user", user)
 	return nil
 }
 
