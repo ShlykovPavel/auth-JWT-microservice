@@ -2,9 +2,11 @@ package roles
 
 import (
 	resp "booker/internal/lib/api/response"
+	"booker/internal/server/users"
 	"booker/internal/storage/database/repositories/users_db"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,11 +18,17 @@ import (
 func CheckAdminInDB(poll *pgxpool.Pool, log *slog.Logger) error {
 	userRepository := users_db.NewUsersDB(poll, log)
 
-	_, err := userRepository.CheckAdminInDB(context.Background())
+	user, err := userRepository.CheckAdminInDB(context.Background())
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			log.Error("no admin role found", "error", err)
-			err = userRepository.AddFirstAdmin(context.Background())
+			//Создаём захэшированный пароль
+			passwordHash, err := users.HashUserPassword("password", log)
+			if err != nil {
+				log.Error("Error while hashing password", "err", err)
+				return fmt.Errorf("failed to hash password: %w", err)
+			}
+			err = userRepository.AddFirstAdmin(context.Background(), passwordHash)
 			if err != nil {
 				log.Error("error adding admin role", "error", err)
 				return err
@@ -29,7 +37,7 @@ func CheckAdminInDB(poll *pgxpool.Pool, log *slog.Logger) error {
 		log.Error("error checking admin role", "error", err)
 		return err
 	}
-	log.Info("admin role check ok. no need to create admin role")
+	log.Info("admin role check ok. no need to create admin role. Found admin:", user)
 	return nil
 }
 

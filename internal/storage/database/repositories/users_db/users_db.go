@@ -18,7 +18,7 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, userinfo *create_user.UserCreate) (int64, error)
 	GetUser(ctx context.Context, userEmail string) (UserInfo, error)
 	CheckAdminInDB(ctx context.Context) (UserInfo, error)
-	AddFirstAdmin(ctx context.Context) error
+	AddFirstAdmin(ctx context.Context, passwordHash string) error
 }
 
 type UserRepositoryImpl struct {
@@ -101,7 +101,7 @@ func (us *UserRepositoryImpl) CheckAdminInDB(ctx context.Context) (UserInfo, err
 		&user.PasswordHash,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return UserInfo{}, nil
+		return UserInfo{}, pgx.ErrNoRows
 	}
 	if err != nil {
 		dbErr := database.PsqlErrorHandler(err)
@@ -110,10 +110,10 @@ func (us *UserRepositoryImpl) CheckAdminInDB(ctx context.Context) (UserInfo, err
 	return user, nil
 }
 
-func (us *UserRepositoryImpl) AddFirstAdmin(ctx context.Context) error {
+func (us *UserRepositoryImpl) AddFirstAdmin(ctx context.Context, passwordHash string) error {
 	query := `INSERT INTO users (id, first_name, last_name, email, password, Role) VALUES ($1, $2, $3, $4, $5, $6)`
 
-	_, err := us.db.Exec(ctx, query, 0, "Admin first name", "Admin last name", "admin@admin.com", "password", "admin")
+	_, err := us.db.Exec(ctx, query, 0, "Admin first name", "Admin last name", "admin@admin.com", passwordHash, "admin")
 	if err != nil {
 		dbErr := database.PsqlErrorHandler(err)
 		return dbErr
