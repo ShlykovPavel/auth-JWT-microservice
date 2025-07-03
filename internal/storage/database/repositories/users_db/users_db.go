@@ -17,6 +17,8 @@ var ErrUserNotFound = errors.New("Пользователь не найден ")
 type UserRepository interface {
 	CreateUser(ctx context.Context, userinfo *create_user.UserCreate) (int64, error)
 	GetUser(ctx context.Context, userEmail string) (UserInfo, error)
+	CheckAdminInDB(ctx context.Context) (UserInfo, error)
+	AddFirstAdmin(ctx context.Context, passwordHash string) error
 }
 
 type UserRepositoryImpl struct {
@@ -31,6 +33,7 @@ type UserInfo struct {
 	LastName     string
 	Email        string
 	PasswordHash string
+	Role         string
 }
 
 func NewUsersDB(dbPoll *pgxpool.Pool, log *slog.Logger) *UserRepositoryImpl {
@@ -48,8 +51,8 @@ func NewUsersDB(dbPoll *pgxpool.Pool, log *slog.Logger) *UserRepositoryImpl {
 // После запроса возвращается Id созданного пользователя
 func (us *UserRepositoryImpl) CreateUser(ctx context.Context, userinfo *create_user.UserCreate) (int64, error) {
 	query := `
-INSERT INTO users (first_name, last_name, email, password)
-VALUES ($1, $2, $3, $4)
+INSERT INTO users (first_name, last_name, email, password, Role)
+VALUES ($1, $2, $3, $4, 'user')
 RETURNING id`
 
 	var id int64
@@ -66,7 +69,7 @@ RETURNING id`
 }
 
 func (us *UserRepositoryImpl) GetUser(ctx context.Context, userEmail string) (UserInfo, error) {
-	query := `SELECT id, first_name, last_name, email, password FROM users WHERE email = $1`
+	query := `SELECT id, first_name, last_name, email, password, role FROM users WHERE email = $1`
 
 	var user UserInfo
 	err := us.db.QueryRow(ctx, query, userEmail).Scan(
@@ -74,7 +77,8 @@ func (us *UserRepositoryImpl) GetUser(ctx context.Context, userEmail string) (Us
 		&user.FirstName,
 		&user.LastName,
 		&user.Email,
-		&user.PasswordHash)
+		&user.PasswordHash,
+		&user.Role)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return UserInfo{}, ErrUserNotFound
 	}
@@ -83,4 +87,49 @@ func (us *UserRepositoryImpl) GetUser(ctx context.Context, userEmail string) (Us
 		return UserInfo{}, dbErr
 	}
 	return user, nil
+}
+
+func (us *UserRepositoryImpl) CheckAdminInDB(ctx context.Context) (UserInfo, error) {
+	query := `SELECT id, first_name, last_name, email, password FROM users WHERE Role LIKE '%admin%'`
+
+	var user UserInfo
+	err := us.db.QueryRow(ctx, query).Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.PasswordHash,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return UserInfo{}, pgx.ErrNoRows
+	}
+	if err != nil {
+		dbErr := database.PsqlErrorHandler(err)
+		return UserInfo{}, dbErr
+	}
+	return user, nil
+}
+
+func (us *UserRepositoryImpl) AddFirstAdmin(ctx context.Context, passwordHash string) error {
+	query := `INSERT INTO users (id, first_name, last_name, email, password, Role) VALUES ($1, $2, $3, $4, $5, $6)`
+
+	_, err := us.db.Exec(ctx, query, 0, "Admin first name", "Admin last name", "admin@admin.com", passwordHash, "admin")
+	if err != nil {
+		dbErr := database.PsqlErrorHandler(err)
+		return dbErr
+	}
+	return nil
+}
+
+func (us *UserRepositoryImpl) SetAdminRole(ctx context.Context, id int64) error {
+	query := `UPDATE users SET Role = 'admin' WHERE id = $1`
+	result, err := us.db.Exec(ctx, query, id)
+	if err != nil {
+		dbErr := database.PsqlErrorHandler(err)
+		return dbErr
+	}
+	if result.RowsAffected() == 0 {
+		return ErrUserNotFound
+	}
+	return nil
 }

@@ -3,8 +3,10 @@ package middlewares
 import (
 	"booker/internal/lib/api/authorization"
 	resp "booker/internal/lib/api/response"
+	"context"
 	"fmt"
 	"github.com/go-chi/render"
+	"github.com/golang-jwt/jwt/v5"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -33,13 +35,16 @@ func AuthMiddleware(secretKey string, log *slog.Logger) func(next http.Handler) 
 
 			tokenString := strings.TrimPrefix(authHeader, bearerPrefix)
 
-			_, err := authorization.Authorization(tokenString, secretKey)
+			claims, err := authorization.Authorization(tokenString, secretKey)
 			if err != nil {
 				renderUnauthorized(w, r, log, fmt.Sprintf("Authorization token is invalid: %v", err))
 				return
 			}
-			log.Debug("Authorization token is valid")
-			next.ServeHTTP(w, r)
+			log.Debug("Authorization token is valid", slog.Any("claims", claims))
+			ctx := context.WithValue(r.Context(), "tokenClaims", claims)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+
 		})
 
 	}
@@ -49,4 +54,39 @@ func renderUnauthorized(w http.ResponseWriter, r *http.Request, log *slog.Logger
 	log.Error(msg)
 	render.Status(r, http.StatusUnauthorized)
 	render.JSON(w, r, resp.Error(msg))
+}
+
+func AuthAdminMiddleware(secretKey string, log *slog.Logger) func(next http.Handler) http.Handler {
+	const op = "internal/lib/api/middlewares/middlewares.go/AuthAdminMiddleware"
+	log = log.With(slog.String("op", op))
+
+	return func(next http.Handler) http.Handler {
+		// Используем AuthMiddleware для проверки авторизации
+		return AuthMiddleware(secretKey, log)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Извлекаем claims из контекста
+			claims, ok := r.Context().Value("tokenClaims").(jwt.MapClaims)
+			if !ok {
+				log.Error("Failed to retrieve claims from context")
+				render.Status(r, http.StatusInternalServerError)
+				render.JSON(w, r, resp.Error("Internal server error"))
+				return
+			}
+
+			value, ok := claims["user_role"].(string)
+			if !ok {
+				log.Error("Failed to retrieve user role from context", "user_role", claims["user_role"])
+				resp.RenderResponse(w, r, http.StatusForbidden, resp.Error("Forbidden"))
+				return
+			}
+			// Проверяем, является ли пользователь администратором
+			if value == "admin" {
+				log.Debug("User is authorized and has admin privileges")
+				next.ServeHTTP(w, r)
+			} else {
+				log.Debug("User is NOT authorized and has admin privileges")
+				resp.RenderResponse(w, r, http.StatusForbidden,
+					resp.Error("Forbidden"))
+			}
+		}))
+	}
 }

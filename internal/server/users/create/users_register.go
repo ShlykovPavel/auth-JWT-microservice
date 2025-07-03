@@ -27,7 +27,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		err := render.DecodeJSON(r.Body, &user)
 		if err != nil {
 			log.Error("Error while decoding request body", "err", err)
-			resp.RenderResponse(w, r, 400, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error(err.Error()))
 			return
 		}
 
@@ -36,7 +36,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		if err = validator.New().Struct(&user); err != nil {
 			validationErrors := err.(validator.ValidationErrors)
 			log.Error("Error validating request body", "err", validationErrors)
-			resp.RenderResponse(w, r, 400, resp.ValidationError(validationErrors))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.ValidationError(validationErrors))
 			return
 		}
 
@@ -44,7 +44,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		passwordHash, err := users.HashUserPassword(user.Password, log)
 		if err != nil {
 			log.Error("Error while hashing password", "err", err)
-			resp.RenderResponse(w, r, 500, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error(err.Error()))
 			return
 		}
 
@@ -54,16 +54,16 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		if err != nil {
 			log.Error("Error while creating user", "err", err)
 			if errors.Is(err, users_db.ErrEmailAlreadyExists) {
-				resp.RenderResponse(w, r, 400, resp.Error(
+				resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error(
 					err.Error()))
 				return
 			}
-			resp.RenderResponse(w, r, 500, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error(err.Error()))
 			return
 		}
 
 		log.Info("Created user", "user id", userId)
-		resp.RenderResponse(w, r, 201, usersDto.CreateUserResponse{
+		resp.RenderResponse(w, r, http.StatusCreated, usersDto.CreateUserResponse{
 			resp.OK(),
 			userId,
 		})

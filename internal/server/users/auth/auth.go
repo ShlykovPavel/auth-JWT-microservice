@@ -14,11 +14,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 var ErrIncorrectCredentials = errors.New("invalid email or password")
 
-func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string) http.HandlerFunc {
+func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string, jwtDuration time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users/auth/AuthentificationHandler"
 		log = log.With(
@@ -30,38 +31,38 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 		userRepository := users_db.NewUsersDB(dbPool, log)
 		tokensRepository := auth_db.NewTokensRepositoryImpl(dbPool, log)
 		// Инициализируем сервис аутентификации
-		authService := services.NewAuthService(userRepository, tokensRepository, log, secretKey)
+		authService := services.NewAuthService(userRepository, tokensRepository, log, secretKey, jwtDuration)
 
 		var user get_user.AuthUser
 		//Парсим тело запроса из json
 		if err := render.DecodeJSON(r.Body, &user); err != nil {
 			log.Error("Error while decoding request body", "err", err)
-			resp.RenderResponse(w, r, 400, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error(err.Error()))
 			return
 		}
 		//Валидируем полученное тело запроса
 		if err := validator.New().Struct(user); err != nil {
 			validationErrors := err.(validator.ValidationErrors)
 			log.Error("Error while validating request body", "err", validationErrors)
-			resp.RenderResponse(w, r, 400, resp.ValidationError(validationErrors))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.ValidationError(validationErrors))
 		}
 		//TODO Посмотреть что можно сделать с телом ответа при валидации полей (приходит 2 json)
 		authTokens, err := authService.Authentication(&user)
 		if err != nil {
 			if errors.Is(err, users_db.ErrUserNotFound) {
 				log.Debug("User not found", "user", user)
-				resp.RenderResponse(w, r, 401, resp.Error(ErrIncorrectCredentials.Error()))
+				resp.RenderResponse(w, r, http.StatusUnauthorized, resp.Error(ErrIncorrectCredentials.Error()))
 				return
 			} else if errors.Is(err, services.ErrWrongPassword) {
 				log.Debug("Password is incorrect", "user", user)
-				resp.RenderResponse(w, r, 401, resp.Error(ErrIncorrectCredentials.Error()))
+				resp.RenderResponse(w, r, http.StatusUnauthorized, resp.Error(ErrIncorrectCredentials.Error()))
 			}
 			log.Error("Error while Authentification user: ", "err", err)
-			resp.RenderResponse(w, r, 500, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error(err.Error()))
 			return
 		}
 		log.Debug("User authenticated", "user", user)
-		resp.RenderResponse(w, r, 200, tokens.RefreshTokensDto{
+		resp.RenderResponse(w, r, http.StatusOK, tokens.RefreshTokensDto{
 			AccessToken:  authTokens.AccessToken,
 			RefreshToken: authTokens.RefreshToken,
 		})

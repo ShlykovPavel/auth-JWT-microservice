@@ -10,23 +10,26 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"time"
 )
 
 var ErrWrongPassword = errors.New("Password is incorrect ")
 
 type AuthService struct {
-	userRepo   users_db.UserRepository
-	tokensRepo auth_db.TokensRepository
-	log        *slog.Logger
-	secretKey  string
+	userRepo    users_db.UserRepository
+	tokensRepo  auth_db.TokensRepository
+	log         *slog.Logger
+	secretKey   string
+	JWTDuration time.Duration
 }
 
-func NewAuthService(db users_db.UserRepository, tokensRepo auth_db.TokensRepository, log *slog.Logger, secretKey string) *AuthService {
+func NewAuthService(db users_db.UserRepository, tokensRepo auth_db.TokensRepository, log *slog.Logger, secretKey string, jwtDuration time.Duration) *AuthService {
 	return &AuthService{
-		userRepo:   db,
-		tokensRepo: tokensRepo,
-		log:        log,
-		secretKey:  secretKey,
+		userRepo:    db,
+		tokensRepo:  tokensRepo,
+		log:         log,
+		secretKey:   secretKey,
+		JWTDuration: jwtDuration,
 	}
 }
 
@@ -51,7 +54,7 @@ func (a *AuthService) Authentication(user *getUserDto.AuthUser) (tokens.RefreshT
 	if !ok {
 		return tokens.RefreshTokensDto{}, ErrWrongPassword
 	}
-	accessToken, err := jwt_tokens.CreateAccessToken(usr.ID, a.secretKey, a.log)
+	accessToken, err := jwt_tokens.CreateAccessToken(usr.ID, a.secretKey, usr.Role, a.JWTDuration, a.log)
 	if err != nil {
 		log.Error("Error while creating access token", "err", err)
 		return tokens.RefreshTokensDto{}, err
@@ -77,12 +80,12 @@ func (a *AuthService) RefreshTokens(tokensForRefresh *tokens.RefreshTokensDto) (
 	log := a.log.With(
 		slog.String("operation", op),
 	)
-	userId, err := a.tokensRepo.DbGetTokens(context.Background(), tokensForRefresh.RefreshToken)
+	tokenData, err := a.tokensRepo.DbGetTokens(context.Background(), tokensForRefresh.RefreshToken)
 	if err != nil {
 		log.Error("Error while fetching tokensForRefresh", "err", err)
 		return tokens.RefreshTokensDto{}, err
 	}
-	accessToken, err := jwt_tokens.CreateAccessToken(userId, a.secretKey, a.log)
+	accessToken, err := jwt_tokens.CreateAccessToken(tokenData.UserId, a.secretKey, tokenData.UserRole, a.JWTDuration, a.log)
 	if err != nil {
 		log.Error("Error while creating access token", "err", err)
 		return tokens.RefreshTokensDto{}, err
@@ -92,7 +95,7 @@ func (a *AuthService) RefreshTokens(tokensForRefresh *tokens.RefreshTokensDto) (
 		log.Error("Error while creating refresh token", "err", err)
 		return tokens.RefreshTokensDto{}, err
 	}
-	err = a.tokensRepo.DbUpdateTokens(context.Background(), userId, refreshToken)
+	err = a.tokensRepo.DbUpdateTokens(context.Background(), tokenData.UserId, refreshToken, tokensForRefresh.RefreshToken)
 	if err != nil {
 		log.Error("Error while storing tokensForRefresh", "err", err)
 		return tokens.RefreshTokensDto{}, err
