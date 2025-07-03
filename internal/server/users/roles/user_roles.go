@@ -46,13 +46,13 @@ func SetAdminRole(poll *pgxpool.Pool, log *slog.Logger) http.HandlerFunc {
 		userID := chi.URLParam(r, "id")
 		if userID == "" {
 			log.Error("User ID is empty")
-			resp.RenderResponse(w, r, 400, resp.Error("User ID is required"))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error("User ID is required"))
 			return
 		}
 		id, err := strconv.ParseInt(userID, 10, 64)
 		if err != nil {
 			log.Error("User ID is invalid", "error", err)
-			resp.RenderResponse(w, r, 400, resp.Error("Invalid user ID"))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error("Invalid user ID"))
 			return
 		}
 		userRepository := users_db.NewUsersDB(poll, log)
@@ -60,12 +60,12 @@ func SetAdminRole(poll *pgxpool.Pool, log *slog.Logger) http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, users_db.ErrUserNotFound) {
 				log.Debug("user not found", "error", err)
-				resp.RenderResponse(w, r, 400, resp.Error("User not found"))
+				resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error("User not found"))
 				return
 			}
 
 			log.Error("error setting admin role", "error", err)
-			resp.RenderResponse(w, r, 500, resp.Error("Failed to set admin role"))
+			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error("Failed to set admin role"))
 			return
 		}
 	}

@@ -75,7 +75,8 @@ func AuthAdminMiddleware(secretKey string, log *slog.Logger) func(next http.Hand
 			value, ok := claims["user_role"].(string)
 			if !ok {
 				log.Error("Failed to retrieve user role from context", "user_role", claims["user_role"])
-				resp.RenderResponse(w, r, 403, nil)
+				resp.RenderResponse(w, r, http.StatusForbidden, resp.Error("Forbidden"))
+				return
 			}
 			// Проверяем, является ли пользователь администратором
 			if value == "admin" {
@@ -83,7 +84,8 @@ func AuthAdminMiddleware(secretKey string, log *slog.Logger) func(next http.Hand
 				next.ServeHTTP(w, r)
 			} else {
 				log.Debug("User is NOT authorized and has admin privileges")
-				resp.RenderResponse(w, r, 403, nil)
+				resp.RenderResponse(w, r, http.StatusForbidden,
+					resp.Error("Forbidden"))
 			}
 		}))
 	}

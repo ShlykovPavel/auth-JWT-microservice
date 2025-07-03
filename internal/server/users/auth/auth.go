@@ -37,32 +37,32 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 		//Парсим тело запроса из json
 		if err := render.DecodeJSON(r.Body, &user); err != nil {
 			log.Error("Error while decoding request body", "err", err)
-			resp.RenderResponse(w, r, 400, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error(err.Error()))
 			return
 		}
 		//Валидируем полученное тело запроса
 		if err := validator.New().Struct(user); err != nil {
 			validationErrors := err.(validator.ValidationErrors)
 			log.Error("Error while validating request body", "err", validationErrors)
-			resp.RenderResponse(w, r, 400, resp.ValidationError(validationErrors))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.ValidationError(validationErrors))
 		}
 		//TODO Посмотреть что можно сделать с телом ответа при валидации полей (приходит 2 json)
 		authTokens, err := authService.Authentication(&user)
 		if err != nil {
 			if errors.Is(err, users_db.ErrUserNotFound) {
 				log.Debug("User not found", "user", user)
-				resp.RenderResponse(w, r, 401, resp.Error(ErrIncorrectCredentials.Error()))
+				resp.RenderResponse(w, r, http.StatusUnauthorized, resp.Error(ErrIncorrectCredentials.Error()))
 				return
 			} else if errors.Is(err, services.ErrWrongPassword) {
 				log.Debug("Password is incorrect", "user", user)
-				resp.RenderResponse(w, r, 401, resp.Error(ErrIncorrectCredentials.Error()))
+				resp.RenderResponse(w, r, http.StatusUnauthorized, resp.Error(ErrIncorrectCredentials.Error()))
 			}
 			log.Error("Error while Authentification user: ", "err", err)
-			resp.RenderResponse(w, r, 500, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error(err.Error()))
 			return
 		}
 		log.Debug("User authenticated", "user", user)
-		resp.RenderResponse(w, r, 200, tokens.RefreshTokensDto{
+		resp.RenderResponse(w, r, http.StatusOK, tokens.RefreshTokensDto{
 			AccessToken:  authTokens.AccessToken,
 			RefreshToken: authTokens.RefreshToken,
 		})

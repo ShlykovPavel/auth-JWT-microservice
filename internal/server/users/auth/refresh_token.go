@@ -32,7 +32,7 @@ func RefreshTokenHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey strin
 		err := render.DecodeJSON(r.Body, &refreshDto)
 		if err != nil {
 			log.Error("Error while decoding json to RefreshTokensDto struct", "Error", err)
-			resp.RenderResponse(w, r, 400, resp.Error("Error while reading request body"))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error("Error while reading request body"))
 			return
 		}
 
@@ -41,7 +41,7 @@ func RefreshTokenHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey strin
 		if err != nil {
 			validationErrors := err.(validator.ValidationErrors)
 			log.Error("Error while validating request body", "err", validationErrors)
-			resp.RenderResponse(w, r, 400, resp.ValidationError(validationErrors))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.ValidationError(validationErrors))
 			return
 		}
 
@@ -49,15 +49,15 @@ func RefreshTokenHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey strin
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				log.Debug("Session not found", "refresh token", refreshDto.RefreshToken)
-				resp.RenderResponse(w, r, 401, resp.Error(ErrSessionNotFound.Error()))
+				resp.RenderResponse(w, r, http.StatusUnauthorized, resp.Error(ErrSessionNotFound.Error()))
 				return
 			}
 			log.Error("Error while updating tokens", "err", err)
-			resp.RenderResponse(w, r, 500, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error(err.Error()))
 			return
 		}
 		//Возвращаем новые токены
-		resp.RenderResponse(w, r, 200, tokens.RefreshTokensDto{AccessToken: newTokens.AccessToken, RefreshToken: newTokens.RefreshToken})
+		resp.RenderResponse(w, r, http.StatusOK, tokens.RefreshTokensDto{AccessToken: newTokens.AccessToken, RefreshToken: newTokens.RefreshToken})
 		return
 	}
 }

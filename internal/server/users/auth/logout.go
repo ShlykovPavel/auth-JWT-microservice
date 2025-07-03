@@ -34,7 +34,7 @@ func LogoutHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string, jwt
 		err := render.DecodeJSON(r.Body, &logoutDto)
 		if err != nil {
 			log.Error("Error while decoding json to RefreshTokensDto struct", "Error", err)
-			resp.RenderResponse(w, r, 400, resp.Error("Error while reading request body"))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error("Error while reading request body"))
 			return
 		}
 
@@ -43,7 +43,7 @@ func LogoutHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string, jwt
 		if err != nil {
 			validationErrors := err.(validator.ValidationErrors)
 			log.Error("Error while validating request body", "err", validationErrors)
-			resp.RenderResponse(w, r, 400, resp.ValidationError(validationErrors))
+			resp.RenderResponse(w, r, http.StatusBadRequest, resp.ValidationError(validationErrors))
 			return
 		}
 
@@ -51,11 +51,11 @@ func LogoutHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string, jwt
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				log.Debug("Session not found", "refresh token", logoutDto.RefreshToken)
-				resp.RenderResponse(w, r, 401, resp.Error(ErrSessionNotFound.Error()))
+				resp.RenderResponse(w, r, http.StatusUnauthorized, resp.Error(ErrSessionNotFound.Error()))
 				return
 			}
 			log.Error("Error while delete token", "err", err)
-			resp.RenderResponse(w, r, 500, resp.Error(err.Error()))
+			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error(err.Error()))
 			return
 		}
 		log.Info("Logout successful, returning 204")
