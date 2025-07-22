@@ -1,8 +1,8 @@
 package middlewares_test
 
 import (
-	"booker/internal/lib/api/middlewares"
 	"encoding/json"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/middlewares"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"

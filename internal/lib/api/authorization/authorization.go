@@ -1,7 +1,7 @@
 package authorization
 
 import (
-	"booker/internal/lib/jwt_tokens"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/jwt_tokens"
 	"github.com/golang-jwt/jwt/v5"
 )
 

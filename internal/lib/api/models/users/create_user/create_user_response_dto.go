@@ -1,7 +1,7 @@
 package create_user
 
 import (
-	resp "booker/internal/lib/api/response"
+	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
 )
 
 // CreateUserResponse Структура ответа на запрос

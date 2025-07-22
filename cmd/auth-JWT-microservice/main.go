@@ -1,14 +1,14 @@
 package main
 
 import (
-	"booker/internal/config"
-	"booker/internal/lib/api/middlewares"
-	"booker/internal/server/users/auth"
-	"booker/internal/server/users/create"
-	"booker/internal/server/users/roles"
-	"booker/internal/storage/database"
 	"context"
 	"fmt"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/config"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/middlewares"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/auth"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/create"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/roles"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log"
@@ -17,6 +17,7 @@ import (
 	"os"
 )
 
+// TODO добавить контекст с таймаутом для всех запросов где участвует БД
 const (
 	envLocal = "local"
 	envDev   = "dev"

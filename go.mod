@@ -1,4 +1,4 @@
-module booker
+module github.com/ShlykovPavel/auth-JWT-microservice
 
 go 1.23.0
 

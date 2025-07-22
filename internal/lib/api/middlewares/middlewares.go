@@ -1,10 +1,10 @@
 package middlewares
 
 import (
-	"booker/internal/lib/api/authorization"
-	resp "booker/internal/lib/api/response"
 	"context"
 	"fmt"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/authorization"
+	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
 	"github.com/go-chi/render"
 	"github.com/golang-jwt/jwt/v5"
 	"log/slog"

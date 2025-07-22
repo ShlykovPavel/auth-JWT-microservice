@@ -1,13 +1,13 @@
 package auth
 
 import (
-	"booker/internal/lib/api/models/tokens"
-	"booker/internal/lib/api/models/users/get_user"
-	resp "booker/internal/lib/api/response"
-	"booker/internal/lib/services"
-	"booker/internal/storage/database/repositories/auth_db"
-	"booker/internal/storage/database/repositories/users_db"
 	"errors"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/tokens"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/users/get_user"
+	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/services"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/auth_db"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	validator "github.com/go-playground/validator"

@@ -1,11 +1,11 @@
 package users
 
 import (
-	usersDto "booker/internal/lib/api/models/users/create_user"
-	resp "booker/internal/lib/api/response"
-	users "booker/internal/server/users"
-	"booker/internal/storage/database/repositories/users_db"
 	"errors"
+	usersDto "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/users/create_user"
+	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
+	users "github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator"

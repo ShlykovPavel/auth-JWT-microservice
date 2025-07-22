@@ -1,12 +1,12 @@
 package roles
 
 import (
-	resp "booker/internal/lib/api/response"
-	"booker/internal/server/users"
-	"booker/internal/storage/database/repositories/users_db"
 	"context"
 	"errors"
 	"fmt"
+	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

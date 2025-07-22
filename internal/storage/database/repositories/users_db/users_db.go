@@ -1,10 +1,10 @@
 package users_db
 
 import (
-	"booker/internal/lib/api/models/users/create_user"
-	"booker/internal/storage/database"
 	"context"
 	"errors"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/users/create_user"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"

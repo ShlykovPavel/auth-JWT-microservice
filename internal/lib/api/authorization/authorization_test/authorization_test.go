@@ -1,7 +1,7 @@
 package authorization_test
 
 import (
-	"booker/internal/lib/api/authorization"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/authorization"
 	"log/slog"
 	"strings"
 	"testing"

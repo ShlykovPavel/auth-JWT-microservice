@@ -1,14 +1,14 @@
 package services
 
 import (
-	"booker/internal/lib/api/models/tokens"
-	getUserDto "booker/internal/lib/api/models/users/get_user"
-	"booker/internal/lib/jwt_tokens"
-	"booker/internal/server/users"
-	"booker/internal/storage/database/repositories/auth_db"
-	"booker/internal/storage/database/repositories/users_db"
 	"context"
 	"errors"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/tokens"
+	getUserDto "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/users/get_user"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/jwt_tokens"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/auth_db"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
 	"log/slog"
 	"time"
 )
