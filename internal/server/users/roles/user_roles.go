@@ -41,7 +41,15 @@ func CheckAdminInDB(poll *pgxpool.Pool, log *slog.Logger) error {
 	return nil
 }
 
-func SetAdminRole(poll *pgxpool.Pool, log *slog.Logger) http.HandlerFunc {
+// SetAdminRole godoc
+// @Summary Установить роль админа пользователю
+// @Description Устанавливает админcкую роль пользователю по id из тела
+// @Tags admin
+// @Security BearerAuth
+// @Param id path int true "ID пользователя"
+// @Success 204
+// @Router /users/{id} [patch]
+func SetAdminRole(log *slog.Logger, userRepo users_db.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := chi.URLParam(r, "id")
 		if userID == "" {
@@ -55,8 +63,8 @@ func SetAdminRole(poll *pgxpool.Pool, log *slog.Logger) http.HandlerFunc {
 			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error("Invalid user ID"))
 			return
 		}
-		userRepository := users_db.NewUsersDB(poll, log)
-		err = userRepository.SetAdminRole(context.Background(), id)
+
+		err = userRepo.SetAdminRole(context.Background(), id)
 		if err != nil {
 			if errors.Is(err, users_db.ErrUserNotFound) {
 				log.Debug("user not found", "error", err)
@@ -68,5 +76,8 @@ func SetAdminRole(poll *pgxpool.Pool, log *slog.Logger) http.HandlerFunc {
 			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error("Failed to set admin role"))
 			return
 		}
+
+		resp.RenderResponse(w, r, http.StatusNoContent, nil)
+		return
 	}
 }

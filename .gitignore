@@ -26,3 +26,5 @@ go.work.sum
 
 Makefile
 info.txt
+docs
+secret_config.yaml

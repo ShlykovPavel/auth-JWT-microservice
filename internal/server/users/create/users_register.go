@@ -1,42 +1,42 @@
 package users
 
 import (
+	"context"
 	"errors"
-	usersDto "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/users/create_user"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/body"
 	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
 	users "github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
+	"github.com/ShlykovPavel/auth-JWT-microservice/models/users/create_user"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/render"
-	"github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
-func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
+// CreateUser godoc
+// @Summary Создать пользователя
+// @Description Регистрирует пользователя в системе
+// @Tags Users
+// @Param input body create_user.UserCreate true "Данные пользователя"
+// @Success 201 {object} create_user.CreateUserResponse
+// @Router /user/register [post]
+func CreateUser(log *slog.Logger, userRepo users_db.UserRepository, timeout time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users.CreateUser"
 		log = log.With(
 			slog.String("operation", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 			slog.String("url", r.URL.Path))
-		usrCreate := users_db.NewUsersDB(dbPoll, log)
 
-		var user usersDto.UserCreate
-		err := render.DecodeJSON(r.Body, &user)
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
+		defer cancel()
+
+		var user create_user.UserCreate
+		err := body.DecodeAndValidateJson(r, &user)
 		if err != nil {
 			log.Error("Error while decoding request body", "err", err)
 			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error(err.Error()))
-			return
-		}
-
-		//Валидация
-		//TODO Посмотреть где ещё создаются валидаторы, и если их много, то нужно вынести инициализацию валидатора глобально для повышения оптимизации
-		if err = validator.New().Struct(&user); err != nil {
-			validationErrors := err.(validator.ValidationErrors)
-			log.Error("Error validating request body", "err", validationErrors)
-			resp.RenderResponse(w, r, http.StatusBadRequest, resp.ValidationError(validationErrors))
 			return
 		}
 
@@ -50,7 +50,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 
 		user.Password = passwordHash
 		//Записываем в бд
-		userId, err := usrCreate.CreateUser(r.Context(), &user)
+		userId, err := userRepo.CreateUser(ctx, &user)
 		if err != nil {
 			log.Error("Error while creating user", "err", err)
 			if errors.Is(err, users_db.ErrEmailAlreadyExists) {
@@ -63,7 +63,7 @@ func CreateUser(log *slog.Logger, dbPoll *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		log.Info("Created user", "user id", userId)
-		resp.RenderResponse(w, r, http.StatusCreated, usersDto.CreateUserResponse{
+		resp.RenderResponse(w, r, http.StatusCreated, create_user.CreateUserResponse{
 			resp.OK(),
 			userId,
 		})
