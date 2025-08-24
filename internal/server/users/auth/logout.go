@@ -1,53 +1,47 @@
 package auth
 
 import (
+	"context"
 	"errors"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/tokens"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/body"
 	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/services"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/auth_db"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
+	"github.com/ShlykovPavel/auth-JWT-microservice/models/tokens"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"net/http"
 	"time"
 )
 
-func LogoutHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string, jwtDuration time.Duration) http.HandlerFunc {
+// LogoutHandler godoc
+// @Summary logout user
+// @Description Удаляет сессию пользователя
+// @Tags Users
+// @Param input body tokens.LogoutRequest true "Токены"
+// @Success 204
+// @Router /logout [post]
+func LogoutHandler(log *slog.Logger, timeout time.Duration, authService *services.AuthService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users/auth/LogoutHandler"
 		log = log.With(
 			slog.String("op", op),
 			slog.String("url", r.URL.String()),
 			slog.String("requestId", middleware.GetReqID(r.Context())))
-		usersRepository := users_db.NewUsersDB(dbPool, log)
-		tokensRepository := auth_db.NewTokensRepositoryImpl(dbPool, log)
-		// Инициализируем сервис аутентификации
-		authService := services.NewAuthService(usersRepository, tokensRepository, log, secretKey, jwtDuration)
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
+		defer cancel()
 
 		// Декодируем json в структуру дто
 		var logoutDto tokens.LogoutRequest
-		err := render.DecodeJSON(r.Body, &logoutDto)
+		err := body.DecodeAndValidateJson(r, &logoutDto)
 		if err != nil {
 			log.Error("Error while decoding json to RefreshTokensDto struct", "Error", err)
 			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error("Error while reading request body"))
 			return
 		}
 
-		// Валидируем полученные поля в структуре
-		err = validator.New().Struct(&logoutDto)
-		if err != nil {
-			validationErrors := err.(validator.ValidationErrors)
-			log.Error("Error while validating request body", "err", validationErrors)
-			resp.RenderResponse(w, r, http.StatusBadRequest, resp.ValidationError(validationErrors))
-			return
-		}
-
-		err = authService.Logout(&logoutDto)
+		err = authService.Logout(&logoutDto, ctx)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				log.Debug("Session not found", "refresh token", logoutDto.RefreshToken)

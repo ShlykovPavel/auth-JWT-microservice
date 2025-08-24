@@ -1,31 +1,32 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	_ "github.com/ShlykovPavel/auth-JWT-microservice/docs"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/app"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/config"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/middlewares"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/auth"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/create"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/roles"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"log"
 	"log/slog"
-	"net/http"
 	"os"
 )
 
-// TODO добавить контекст с таймаутом для всех запросов где участвует БД
 const (
 	envLocal = "local"
 	envDev   = "dev"
 	envProd  = "prod"
 )
 
+// @title Auth Microservice API
+// @version 1.0
+// @description API для управления бронированиями
+// @host localhost:8080
+// @BasePath /api/v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Add "Bearer" before token
 func main() {
-	cfg, err := config.LoadConfig(".env")
+	cfg, err := config.LoadConfig("secret_config.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,49 +34,9 @@ func main() {
 	logger := setupLogger(cfg.Env)
 	logger.Info("Starting application")
 	logger.Debug("Debug messages enabled")
-	dbConfig := database.DbConfig{
-		DbName:     cfg.DbName,
-		DbUser:     cfg.DbUser,
-		DbPassword: cfg.DbPassword,
-		DbHost:     cfg.DbHost,
-		DbPort:     cfg.DbPort,
-	}
 
-	poll, err := database.CreatePool(context.Background(), &dbConfig, logger)
-
-	err = roles.CheckAdminInDB(poll, logger)
-	if err != nil {
-		logger.Error("Failed to check admin in database", "error", err)
-	}
-	router := chi.NewRouter()
-	router.Use(middleware.RequestID)
-	router.Use(middleware.Logger)
-	router.Use(middleware.Recoverer)
-	router.Use(middleware.URLFormat)
-	router.Group(func(r chi.Router) {
-		r.Use(middlewares.AuthMiddleware(cfg.JWTSecretKey, logger))
-		r.Use(middlewares.AuthAdminMiddleware(cfg.JWTSecretKey, logger))
-		r.Patch("/users/{id}", roles.SetAdminRole(poll, logger))
-	})
-	router.Post("/user/register", users.CreateUser(logger, poll))
-	router.Post("/login", auth.AuthenticationHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
-	router.Post("/refresh", auth.RefreshTokenHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
-	router.Post("/logout", auth.LogoutHandler(logger, poll, cfg.JWTSecretKey, cfg.JWTDuration))
-
-	logger.Info("Starting HTTP server", slog.String("adress", cfg.Address))
-	// Run server
-	srv := &http.Server{
-		Addr:    cfg.Address,
-		Handler: router,
-		//ReadHeaderTimeout: cfg.HTTPServer.Timeout,
-		//WriteTimeout:      cfg.HTTPServer.Timeout,
-		//IdleTimeout:       cfg.HTTPServer.IdleTimeout,
-	}
-	if err := srv.ListenAndServe(); err != nil {
-		logger.Error("failed to start server", "error", err.Error())
-		os.Exit(1)
-	}
-	logger.Info("Stopped HTTP server")
+	application := app.NewApp(logger, cfg)
+	application.Run()
 }
 
 func setupLogger(env string) *slog.Logger {

@@ -3,8 +3,8 @@ package users_db
 import (
 	"context"
 	"errors"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/users/create_user"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database"
+	"github.com/ShlykovPavel/auth-JWT-microservice/models/users/create_user"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,6 +19,7 @@ type UserRepository interface {
 	GetUser(ctx context.Context, userEmail string) (UserInfo, error)
 	CheckAdminInDB(ctx context.Context) (UserInfo, error)
 	AddFirstAdmin(ctx context.Context, passwordHash string) error
+	SetAdminRole(ctx context.Context, id int64) error
 }
 
 type UserRepositoryImpl struct {

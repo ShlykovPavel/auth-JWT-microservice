@@ -1,17 +1,15 @@
 package auth
 
 import (
+	"context"
 	"errors"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/tokens"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/models/users/get_user"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/body"
 	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/services"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/auth_db"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
+	"github.com/ShlykovPavel/auth-JWT-microservice/models/tokens"
+	"github.com/ShlykovPavel/auth-JWT-microservice/models/users/get_user"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/render"
-	validator "github.com/go-playground/validator"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"net/http"
 	"time"
@@ -19,7 +17,14 @@ import (
 
 var ErrIncorrectCredentials = errors.New("invalid email or password")
 
-func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey string, jwtDuration time.Duration) http.HandlerFunc {
+// AuthenticationHandler godoc
+// @Summary Логин
+// @Description Логинит пользователя. Выдаёт access и refresh токены
+// @Tags Users
+// @Param input body get_user.AuthUser true "Данные пользователя"
+// @Success 200 {object} tokens.RefreshTokensDto
+// @Router /login [post]
+func AuthenticationHandler(log *slog.Logger, timeout time.Duration, authService *services.AuthService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server/users/auth/AuthentificationHandler"
 		log = log.With(
@@ -28,26 +33,19 @@ func AuthenticationHandler(log *slog.Logger, dbPool *pgxpool.Pool, secretKey str
 			slog.String("url", r.URL.Path),
 		)
 
-		userRepository := users_db.NewUsersDB(dbPool, log)
-		tokensRepository := auth_db.NewTokensRepositoryImpl(dbPool, log)
-		// Инициализируем сервис аутентификации
-		authService := services.NewAuthService(userRepository, tokensRepository, log, secretKey, jwtDuration)
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
+		defer cancel()
 
 		var user get_user.AuthUser
 		//Парсим тело запроса из json
-		if err := render.DecodeJSON(r.Body, &user); err != nil {
+		if err := body.DecodeAndValidateJson(r, &user); err != nil {
 			log.Error("Error while decoding request body", "err", err)
 			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error(err.Error()))
 			return
 		}
-		//Валидируем полученное тело запроса
-		if err := validator.New().Struct(user); err != nil {
-			validationErrors := err.(validator.ValidationErrors)
-			log.Error("Error while validating request body", "err", validationErrors)
-			resp.RenderResponse(w, r, http.StatusBadRequest, resp.ValidationError(validationErrors))
-		}
+
 		//TODO Посмотреть что можно сделать с телом ответа при валидации полей (приходит 2 json)
-		authTokens, err := authService.Authentication(&user)
+		authTokens, err := authService.Authentication(&user, ctx)
 		if err != nil {
 			if errors.Is(err, users_db.ErrUserNotFound) {
 				log.Debug("User not found", "user", user)
