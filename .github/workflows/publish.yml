@@ -1,0 +1,75 @@
+# Название workflow, отображается в интерфейсе GitHub Actions
+name: Build and Push Docker Image to GHCR
+
+# Триггеры: запускать workflow при пуше в main или вручную через workflow_dispatch
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Переменные окружения
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+# Разрешения: права на чтение кода и запись в GHCR
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      # Шаг 1: Клонируем репозиторий
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Шаг 2: Настраиваем Go
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.5'
+
+      # Шаг 3: Устанавливаем swag и генерируем документацию
+      - name: Generate Swagger docs
+        run: |
+          go install github.com/swaggo/swag/cmd/swag@v1.16.6
+          swag init -g cmd/auth-JWT-microservice/main.go --output docs --parseDependency --parseInternal
+
+      # Шаг 4: Устанавливаем зависимости Go
+      - name: Install dependencies
+        run: go get -v -t -d ./...
+
+      # Шаг 5: Запускаем тесты (опционально)
+      - name: Run tests
+        run: go test -v ./...
+
+      # Шаг 6: Логинимся в GitHub Container Registry
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Шаг 7: Извлекаем метаданные для тегов и меток
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=short
+            type=raw,value=latest
+
+      # Шаг 8: Собираем и публикуем образ
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

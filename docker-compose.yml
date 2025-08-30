@@ -1,0 +1,48 @@
+version: "3.9" # Версия формата docker-compose, совместимая с большинством версий Docker
+
+networks:
+  app-network: # Сеть для связи сервисов
+    driver: bridge
+
+services:
+  postgres: # Сервис базы данных
+    image: postgres:16 # Официальный образ PostgreSQL
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=users_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Персистентное хранилище
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+
+  users_service: # Название сервиса
+    image: ghcr.io/shlykovpavel/users-microservice:latest # Образ из GHCR
+    container_name: users_service # Имя контейнера для удобства
+    environment: # Переменные окружения
+      - DB_HOST=postgres # Имя сервиса БД в сети
+      - DB_PORT=5432
+      - DB_USER=admin
+      - DB_PASSWORD=secret
+      - DB_NAME=users_db
+      - ENV=dev
+      - JWT_SECRET_KEY=Cvfram5qcLtbYzkEkFXZ9N0BfOW6A815
+      - ADDRESS=0.0.0.0:8080
+    ports:
+      - "8080:8080" # Маппинг порта хоста на порт контейнера
+    networks:
+      - app-network # Подключение к сети
+    depends_on: # Зависимость от БД
+      - postgres
+
+volumes:
+  postgres_data: # Именованный том для данных PostgreSQL
+

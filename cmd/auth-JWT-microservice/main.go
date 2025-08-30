@@ -18,7 +18,7 @@ const (
 
 // @title Auth Microservice API
 // @version 1.0
-// @description API для управления бронированиями
+// @description API для регистрации и авторизации
 // @host localhost:8080
 // @BasePath /api/v1
 // @securityDefinitions.apikey BearerAuth
