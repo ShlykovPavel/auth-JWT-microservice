@@ -17,6 +17,7 @@ WORKDIR /app
 # Копируем бинарник и файлы конфигурации
 COPY --from=builder /build_app/auth-JWT-microservice .
 COPY --from=builder /build_app/config.yaml .
+COPY --from=builder /build_app/internal/storage/database/migration ./internal/storage/database/migration
 #COPY --from=builder /build_app/secret_config.yaml .
 EXPOSE 8080
 USER appuser
