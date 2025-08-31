@@ -11,9 +11,11 @@ services:
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=users_db
+      - POSTGRES_DB=auth_db
     volumes:
       - postgres_data:/var/lib/postgresql/data # Персистентное хранилище
+    ports:
+      - "5432:5432"
     networks:
       - app-network
     healthcheck:
@@ -22,17 +24,28 @@ services:
       timeout: 5s
       retries: 5
 
+  migration:
+    image: migrate/migrate:v4.17.1
+    container_name: migration
+    volumes:
+      - ./internal/storage/database/migration:/migrations
+    command: -path=/migrations -database "postgres://admin:secret@postgres:5432/auth_db?sslmode=disable" up
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 
-  users_service: # Название сервиса
-    image: ghcr.io/shlykovpavel/users-microservice:latest # Образ из GHCR
-    container_name: users_service # Имя контейнера для удобства
+  auth-jwt-microservice: # Название сервиса
+    image: ghcr.io/shlykovpavel/auth-jwt-microservice:latest # Образ из GHCR
+    container_name: auth-jwt-microservice # Имя контейнера для удобства
     environment: # Переменные окружения
       - DB_HOST=postgres # Имя сервиса БД в сети
       - DB_PORT=5432
       - DB_USER=admin
       - DB_PASSWORD=secret
-      - DB_NAME=users_db
+      - DB_NAME=auth_db
       - ENV=dev
       - JWT_SECRET_KEY=Cvfram5qcLtbYzkEkFXZ9N0BfOW6A815
       - ADDRESS=0.0.0.0:8080
@@ -41,7 +54,8 @@ services:
     networks:
       - app-network # Подключение к сети
     depends_on: # Зависимость от БД
-      - postgres
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data: # Именованный том для данных PostgreSQL
