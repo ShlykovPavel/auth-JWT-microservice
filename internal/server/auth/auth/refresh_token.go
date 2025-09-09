@@ -7,53 +7,50 @@ import (
 	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/services"
 	"github.com/ShlykovPavel/auth-JWT-microservice/models/tokens"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/render"
 	"github.com/jackc/pgx/v5"
 	"log/slog"
 	"net/http"
 	"time"
 )
 
-// LogoutHandler godoc
-// @Summary logout user
-// @Description Удаляет сессию пользователя
+var ErrSessionNotFound = errors.New("Session not found")
+
+// RefreshTokenHandler godoc
+// @Summary refresh token
+// @Description Обновляет access token и выдаёт новый refresh token
 // @Tags Users
-// @Param input body tokens.LogoutRequest true "Токены"
-// @Success 204
-// @Router /logout [post]
-func LogoutHandler(log *slog.Logger, timeout time.Duration, authService *services.AuthService) http.HandlerFunc {
+// @Param input body tokens.RefreshTokensDto true "Токены"
+// @Success 200 {object} tokens.RefreshTokensDto
+// @Router /refresh [post]
+func RefreshTokenHandler(log *slog.Logger, timeout time.Duration, authService *services.AuthService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "server/users/auth/LogoutHandler"
-		log = log.With(
-			slog.String("op", op),
-			slog.String("url", r.URL.String()),
-			slog.String("requestId", middleware.GetReqID(r.Context())))
+		const op = "server/auth/auth/RefreshTokenHandler"
+		log = log.With(slog.String("op", op))
 		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 
 		// Декодируем json в структуру дто
-		var logoutDto tokens.LogoutRequest
-		err := body.DecodeAndValidateJson(r, &logoutDto)
+		var refreshDto tokens.RefreshTokensDto
+		err := body.DecodeAndValidateJson(r, &refreshDto)
 		if err != nil {
 			log.Error("Error while decoding json to RefreshTokensDto struct", "Error", err)
 			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error("Error while reading request body"))
 			return
 		}
 
-		err = authService.Logout(&logoutDto, ctx)
+		newTokens, err := authService.RefreshTokens(&refreshDto, ctx)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				log.Debug("Session not found", "refresh token", logoutDto.RefreshToken)
+				log.Debug("Session not found", "refresh token", refreshDto.RefreshToken)
 				resp.RenderResponse(w, r, http.StatusUnauthorized, resp.Error(ErrSessionNotFound.Error()))
 				return
 			}
-			log.Error("Error while delete token", "err", err)
+			log.Error("Error while updating tokens", "err", err)
 			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error(err.Error()))
 			return
 		}
-		log.Info("Logout successful, returning 204")
-		render.NoContent(w, r)
+		//Возвращаем новые токены
+		resp.RenderResponse(w, r, http.StatusOK, tokens.RefreshTokensDto{AccessToken: newTokens.AccessToken, RefreshToken: newTokens.RefreshToken})
 		return
 	}
 }

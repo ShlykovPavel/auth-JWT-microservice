@@ -2,13 +2,24 @@ package app
 
 import (
 	"context"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/config"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/middlewares"
 	validators "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/validator"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/services"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/auth"
-	users "github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/create"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/roles"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/auth/auth"
+	users "github.com/ShlykovPavel/auth-JWT-microservice/internal/server/auth/register"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/auth/roles"
+	users_delete "github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/delete"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/get_user"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/get_user/get_user_list"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/update_user"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/auth_db"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
@@ -17,12 +28,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 // App Структура приложения. Включает в себя все необходимые элементы для запуска приложения. (в последствии сюда можно докинуть gRPC итп)
@@ -55,7 +60,7 @@ func NewApp(logger *slog.Logger, cfg *config.Config) *App {
 
 	poll, err := database.CreatePool(context.Background(), &dbConfig, logger)
 	if err != nil {
-		logger.Error("Failed to create database pool", "error", err)
+		logger.Error("Failed to register database pool", "error", err)
 		os.Exit(1)
 	}
 
@@ -90,12 +95,24 @@ func NewApp(logger *slog.Logger, cfg *config.Config) *App {
 		apiRouter.Group(func(r chi.Router) {
 			r.Use(middlewares.AuthMiddleware(cfg.JWTSecretKey, logger))
 			r.Use(middlewares.AuthAdminMiddleware(cfg.JWTSecretKey, logger))
-			r.Patch("/users/{id}", roles.SetAdminRole(logger, userRepository))
+			r.Patch("/user/{id}", roles.SetAdminRole(logger, userRepository))
 		})
 		apiRouter.Post("/user/register", users.CreateUser(logger, userRepository, cfg.ServerTimeout))
 		apiRouter.Post("/login", auth.AuthenticationHandler(logger, cfg.ServerTimeout, authService))
 		apiRouter.Post("/refresh", auth.RefreshTokenHandler(logger, cfg.ServerTimeout, authService))
 		apiRouter.Post("/logout", auth.LogoutHandler(logger, cfg.ServerTimeout, authService))
+
+		apiRouter.Group(func(users chi.Router) {
+			users.Use(middlewares.AuthMiddleware(cfg.JWTSecretKey, logger))
+
+			users.Get("/user/{id}", get_user.GetUserById(logger, userRepository, cfg.ServerTimeout))
+			users.Get("/users", get_user_list.GetUserList(logger, userRepository, cfg.ServerTimeout))
+			users.Group(func(usersAdmin chi.Router) {
+				usersAdmin.Use(middlewares.AuthAdminMiddleware(cfg.JWTSecretKey, logger))
+				usersAdmin.Put("/users/{id}", update_user.UpdateUserHandler(logger, userRepository, cfg.ServerTimeout))
+				usersAdmin.Delete("/users/{id}", users_delete.DeleteUserHandler(logger, userRepository, cfg.ServerTimeout))
+			})
+		})
 
 	})
 

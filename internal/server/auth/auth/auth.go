@@ -3,6 +3,10 @@ package auth
 import (
 	"context"
 	"errors"
+	"log/slog"
+	"net/http"
+	"time"
+
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/body"
 	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/services"
@@ -10,9 +14,6 @@ import (
 	"github.com/ShlykovPavel/auth-JWT-microservice/models/tokens"
 	"github.com/ShlykovPavel/auth-JWT-microservice/models/users/get_user"
 	"github.com/go-chi/chi/v5/middleware"
-	"log/slog"
-	"net/http"
-	"time"
 )
 
 var ErrIncorrectCredentials = errors.New("invalid email or password")
@@ -26,7 +27,7 @@ var ErrIncorrectCredentials = errors.New("invalid email or password")
 // @Router /login [post]
 func AuthenticationHandler(log *slog.Logger, timeout time.Duration, authService *services.AuthService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "server/users/auth/AuthentificationHandler"
+		const op = "server/auth/auth/AuthentificationHandler"
 		log = log.With(
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
