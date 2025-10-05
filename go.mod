@@ -5,6 +5,7 @@ go 1.23.5
 require (
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-chi/render v1.0.3
+	github.com/go-co-op/gocron v1.37.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/ilyakaznacheev/cleanenv v1.5.0
@@ -30,6 +31,7 @@ require (
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/google/uuid v1.4.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
@@ -44,9 +46,11 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
+	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/mod v0.27.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect

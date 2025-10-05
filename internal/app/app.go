@@ -9,7 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/app/outbox_worker"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/config"
+	KafkaProducer "github.com/ShlykovPavel/auth-JWT-microservice/internal/kafka/producer"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/middlewares"
 	validators "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/validator"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/services"
@@ -23,6 +25,7 @@ import (
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/auth_db"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_outbox_db"
 	"github.com/ShlykovPavel/auth-JWT-microservice/metrics"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -73,10 +76,21 @@ func NewApp(logger *slog.Logger, cfg *config.Config) *App {
 
 	// Инициализируем объекты репозиториев
 	userRepository := users_db.NewUsersDB(poll, logger)
+	usersOutboxRepository := users_outbox_db.NewUsersOutboxDB(poll, logger)
 	tokensRepository := auth_db.NewTokensRepositoryImpl(poll, logger)
 	// Инициализация сервиса авторизации
 	authService := services.NewAuthService(userRepository, tokensRepository, logger, cfg.JWTSecretKey, cfg.JWTDuration)
 
+	//Инициализация продюсера кафки
+	kafkaProducer := KafkaProducer.InitKafkaProducer(cfg.KafkaHost, cfg.KafkaUsersTopic, logger)
+	//defer func() {
+	//	if err = kafkaProducer.Close(); err != nil {
+	//		logger.Error("Failed to close Kafka producer", "error", err)
+	//	}
+	//}()
+	//Инициализация шедулера
+	outboxWorker := outbox_worker.NewOutboxWorker(poll, kafkaProducer, usersOutboxRepository, logger)
+	outbox_worker.SetupScheduler(outboxWorker)
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Logger)
@@ -97,7 +111,7 @@ func NewApp(logger *slog.Logger, cfg *config.Config) *App {
 			r.Use(middlewares.AuthAdminMiddleware(cfg.JWTSecretKey, logger))
 			r.Patch("/user/{id}", roles.SetAdminRole(logger, userRepository))
 		})
-		apiRouter.Post("/user/register", users.CreateUser(logger, userRepository, cfg.ServerTimeout))
+		apiRouter.Post("/user/register", users.CreateUser(logger, userRepository, cfg.ServerTimeout, usersOutboxRepository))
 		apiRouter.Post("/login", auth.AuthenticationHandler(logger, cfg.ServerTimeout, authService))
 		apiRouter.Post("/refresh", auth.RefreshTokenHandler(logger, cfg.ServerTimeout, authService))
 		apiRouter.Post("/logout", auth.LogoutHandler(logger, cfg.ServerTimeout, authService))

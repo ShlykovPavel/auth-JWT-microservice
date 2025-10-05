@@ -2,7 +2,7 @@ CREATE TABLE users_outbox (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     send_to_kafka bool default false,
-    payload JSONB NOT NULL,
+--     payload JSONB NOT NULL,
     event_type VARCHAR(255) NOT NULL,
     attempt_count INT DEFAULT 0,
     last_attempt_at TIMESTAMP WITH TIME ZONE,

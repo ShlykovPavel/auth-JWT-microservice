@@ -1,4 +1,4 @@
-package kafka
+package KafkaProducer
 
 import (
 	"context"

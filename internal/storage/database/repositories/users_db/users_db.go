@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"strings"
+
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/query_params"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database"
 	"github.com/ShlykovPavel/auth-JWT-microservice/models/users/create_user"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"log/slog"
-	"strings"
 )
 
 var ErrEmailAlreadyExists = errors.New("Пользователь с email уже существует. ")
@@ -36,13 +37,13 @@ type UserRepositoryImpl struct {
 
 // UserInfo Структура с информацие о пользователе
 type UserInfo struct {
-	ID           int64
-	FirstName    string
-	LastName     string
-	Email        string
-	PasswordHash string
-	Role         string
-	Phone        string
+	ID           int64  `json:"id"`
+	FirstName    string `json:"first_name"`
+	LastName     string `json:"last_name"`
+	Email        string `json:"email"`
+	PasswordHash string `json:"-"`
+	Role         string `json:"role"`
+	Phone        string `json:"phone"`
 }
 
 // UserListResult для GetUserList

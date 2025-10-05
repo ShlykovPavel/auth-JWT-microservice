@@ -1,9 +1,10 @@
 package config
 
 import (
-	"github.com/ilyakaznacheev/cleanenv"
 	"log"
 	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 // Config представляет конфигурацию приложения
@@ -23,6 +24,8 @@ type Config struct {
 	JWTSecretKey        string        `yaml:"jwt_secret_key" env:"JWT_SECRET_KEY" env-required:"true"`
 	JWTDuration         time.Duration `yaml:"jwt_duration"  env:"JWT_DURATION" env-default:"5m"`
 	ServerTimeout       time.Duration `yaml:"server_timeout" env:"SERVER_TIMEOUT" env-default:"10s"`
+	KafkaHost           string        `yaml:"kafka_host" env:"KAFKA_HOST" env-required:"true"`
+	KafkaUsersTopic     string        `yaml:"kafka_users_topic" env:"KAFKA_USERS_TOPIC" env-required:"true"`
 }
 
 // LoadConfig загружает конфигурацию из файла и переменных окружения
