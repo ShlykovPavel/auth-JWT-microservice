@@ -29,7 +29,6 @@ func NewOutboxWorker(dbPoll *pgxpool.Pool, kafkaProducer *kafkaProducer.KafkaPro
 
 func (ow *OutboxWorker) SendUsersToKafka() error {
 	//	Выполняем поиск новых записей в outbox
-	//	TODO Реализовать репозиторий для outbox и использовать его здесь
 	ctx := context.Background()
 	var unsentUsers []users_outbox_db.User
 	unsentUsers, err := ow.usersOutboxRepo.GetUnsentUsers()

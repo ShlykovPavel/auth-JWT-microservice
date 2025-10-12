@@ -6,7 +6,7 @@ import (
 	"github.com/go-co-op/gocron"
 )
 
-func SetupScheduler(worker *OutboxWorker) {
+func SetupScheduler(worker *OutboxWorker) *gocron.Scheduler {
 	scheduler := gocron.NewScheduler(time.UTC)
 	scheduler.Every(time.Second * 5).Do(func() {
 		if err := worker.SendUsersToKafka(); err != nil {
@@ -15,4 +15,5 @@ func SetupScheduler(worker *OutboxWorker) {
 	})
 	scheduler.StartAsync()
 	worker.logger.Info("Outbox worker scheduler started")
+	return scheduler
 }

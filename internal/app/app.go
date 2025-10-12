@@ -29,15 +29,17 @@ import (
 	"github.com/ShlykovPavel/auth-JWT-microservice/metrics"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-co-op/gocron"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // App Структура приложения. Включает в себя все необходимые элементы для запуска приложения. (в последствии сюда можно докинуть gRPC итп)
 type App struct {
-	HTTPServer *http.Server
-	logger     *slog.Logger
-	cfg        *config.Config
+	HTTPServer     *http.Server
+	logger         *slog.Logger
+	cfg            *config.Config
+	kafkaScheduler *gocron.Scheduler
 }
 
 // NewApp создаёт экземпляр приложения, инициализируя все зависимости:
@@ -90,7 +92,7 @@ func NewApp(logger *slog.Logger, cfg *config.Config) *App {
 	//}()
 	//Инициализация шедулера
 	outboxWorker := outbox_worker.NewOutboxWorker(poll, kafkaProducer, usersOutboxRepository, logger)
-	outbox_worker.SetupScheduler(outboxWorker)
+	kafkaScheduler := outbox_worker.SetupScheduler(outboxWorker)
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Logger)
@@ -137,7 +139,7 @@ func NewApp(logger *slog.Logger, cfg *config.Config) *App {
 		ReadHeaderTimeout: cfg.ServerTimeout,
 		WriteTimeout:      cfg.ServerTimeout,
 	}
-	return &App{cfg: cfg, logger: logger, HTTPServer: srv}
+	return &App{cfg: cfg, logger: logger, HTTPServer: srv, kafkaScheduler: kafkaScheduler}
 }
 
 // Run запускает HTTP-сервер и ожидает сигналов для graceful shutdown.
@@ -159,6 +161,7 @@ func (a *App) Run() {
 	<-quit
 	a.logger.Info("Shutting down server...")
 
+	a.kafkaScheduler.Stop()
 	// Graceful shutdown с таймаутом
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // Можно вынести в config
 	defer cancel()
