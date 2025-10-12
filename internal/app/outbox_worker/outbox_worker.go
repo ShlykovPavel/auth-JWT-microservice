@@ -2,6 +2,7 @@ package outbox_worker
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"strconv"
 
@@ -45,9 +46,14 @@ func (ow *OutboxWorker) SendUsersToKafka() error {
 	var messages []kafka.Message
 	var userIds []int64
 	for _, user := range unsentUsers {
+		kafkaPayload, err := json.Marshal(user.Payload)
+		if err != nil {
+			ow.logger.Error("Failed to marshal user payload", "user_id", user.UserId, "error", err)
+			continue
+		}
 		message := kafka.Message{
 			Key:   []byte(strconv.FormatInt(user.UserId, 10)),
-			Value: []byte(user.Payload.Email + "|" + user.Payload.FirstName + "|" + user.Payload.LastName + "|" + user.Payload.Role + "|" + user.Payload.Phone),
+			Value: kafkaPayload,
 		}
 		messages = append(messages, message)
 		userIds = append(userIds, user.UserId)
