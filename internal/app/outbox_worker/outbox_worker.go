@@ -41,7 +41,7 @@ func (ow *OutboxWorker) SendUsersToKafka() error {
 		ow.logger.Debug("No unsent users found in outbox")
 		return nil
 	}
-	ow.logger.Info("Found unsent users in outbox", "count", len(unsentUsers))
+	ow.logger.Debug("Found unsent users in outbox", "count", len(unsentUsers))
 
 	var messages []kafka.Message
 	var userIds []int64
@@ -69,14 +69,14 @@ func (ow *OutboxWorker) SendUsersToKafka() error {
 		return err
 
 	}
-	ow.logger.Info("Successfully sent users to Kafka", "count", len(messages))
+	ow.logger.Debug("Successfully sent users to Kafka", "count", len(messages))
 	//	Обновляем записи в outbox, помечая их как отправленные
 	updatedCount, err := ow.usersOutboxRepo.MarkAsSentToKafka(userIds)
 	if err != nil {
 		ow.logger.Error("Failed to mark users as sent in outbox", "error", err)
 		return err
 	}
-	ow.logger.Info("Marked users as sent in outbox", "count", updatedCount)
+	ow.logger.Debug("Marked users as sent in outbox", "count", updatedCount)
 	return nil
 
 }

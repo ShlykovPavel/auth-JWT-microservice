@@ -11,3 +11,6 @@ db_max_connections: 100
 db_health_check_period: 1m
 kafka_host: localhost:9092
 kafka_users_topic: users
+kafkaProducerWorker:
+  workerInterval: 20s
+  workerAttempts: 5

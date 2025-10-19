@@ -39,6 +39,7 @@ type App struct {
 	HTTPServer     *http.Server
 	logger         *slog.Logger
 	cfg            *config.Config
+	KafkaProducer  *KafkaProducer.KafkaProducer
 	kafkaScheduler *gocron.Scheduler
 }
 
@@ -85,14 +86,9 @@ func NewApp(logger *slog.Logger, cfg *config.Config) *App {
 
 	//Инициализация продюсера кафки
 	kafkaProducer := KafkaProducer.InitKafkaProducer(cfg.KafkaHost, cfg.KafkaUsersTopic, logger)
-	//defer func() {
-	//	if err = kafkaProducer.Close(); err != nil {
-	//		logger.Error("Failed to close Kafka producer", "error", err)
-	//	}
-	//}()
 	//Инициализация шедулера
 	outboxWorker := outbox_worker.NewOutboxWorker(poll, kafkaProducer, usersOutboxRepository, logger)
-	kafkaScheduler := outbox_worker.SetupScheduler(outboxWorker)
+	kafkaScheduler := outbox_worker.SetupScheduler(outboxWorker, cfg.KafkaProducerWorker.WorkerInterval)
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Logger)
@@ -162,6 +158,13 @@ func (a *App) Run() {
 	a.logger.Info("Shutting down server...")
 
 	a.kafkaScheduler.Stop()
+	a.logger.Info("Kafka outbox scheduler stopped")
+
+	if err := a.KafkaProducer.Close(); err != nil {
+		a.logger.Error("Failed to close Kafka producer", "error", err)
+	}
+	a.logger.Info("Kafka producer closed")
+
 	// Graceful shutdown с таймаутом
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // Можно вынести в config
 	defer cancel()
