@@ -87,7 +87,7 @@ func NewApp(logger *slog.Logger, cfg *config.Config) *App {
 	//Инициализация продюсера кафки
 	kafkaProducer := KafkaProducer.InitKafkaProducer(cfg.KafkaHost, cfg.KafkaUsersTopic, logger)
 	//Инициализация шедулера
-	outboxWorker := outbox_worker.NewOutboxWorker(poll, kafkaProducer, usersOutboxRepository, logger)
+	outboxWorker := outbox_worker.NewOutboxWorker(poll, kafkaProducer, usersOutboxRepository, logger, cfg.KafkaProducerWorker.WorkerAttempts)
 	kafkaScheduler := outbox_worker.SetupScheduler(outboxWorker, cfg.KafkaProducerWorker.WorkerInterval)
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
@@ -135,7 +135,7 @@ func NewApp(logger *slog.Logger, cfg *config.Config) *App {
 		ReadHeaderTimeout: cfg.ServerTimeout,
 		WriteTimeout:      cfg.ServerTimeout,
 	}
-	return &App{cfg: cfg, logger: logger, HTTPServer: srv, kafkaScheduler: kafkaScheduler}
+	return &App{cfg: cfg, logger: logger, HTTPServer: srv, kafkaScheduler: kafkaScheduler, KafkaProducer: kafkaProducer}
 }
 
 // Run запускает HTTP-сервер и ожидает сигналов для graceful shutdown.

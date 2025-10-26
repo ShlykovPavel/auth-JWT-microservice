@@ -17,14 +17,16 @@ type OutboxWorker struct {
 	kafkaProducer   *kafkaProducer.KafkaProducer
 	usersOutboxRepo users_outbox_db.UsersOutboxRepository
 	logger          *slog.Logger
+	attemptLimit    int8
 }
 
-func NewOutboxWorker(dbPoll *pgxpool.Pool, kafkaProducer *kafkaProducer.KafkaProducer, usersOutboxDBRepo users_outbox_db.UsersOutboxRepository, logger *slog.Logger) *OutboxWorker {
+func NewOutboxWorker(dbPoll *pgxpool.Pool, kafkaProducer *kafkaProducer.KafkaProducer, usersOutboxDBRepo users_outbox_db.UsersOutboxRepository, logger *slog.Logger, attemptLimit int8) *OutboxWorker {
 	return &OutboxWorker{
 		dbPoll:          dbPoll,
 		kafkaProducer:   kafkaProducer,
 		usersOutboxRepo: usersOutboxDBRepo,
 		logger:          logger,
+		attemptLimit:    attemptLimit,
 	}
 }
 
@@ -78,5 +80,27 @@ func (ow *OutboxWorker) SendUsersToKafka() error {
 	}
 	ow.logger.Debug("Marked users as sent in outbox", "count", updatedCount)
 	return nil
+}
 
+func (ow *OutboxWorker) MarkFailedUsers() error {
+	//	Ищем записи, у которых количество попыток превышает лимит
+	failedUsers, err := ow.usersOutboxRepo.GetAttemptCountLimitList(ow.attemptLimit)
+	if err != nil {
+		ow.logger.Error("Failed to get users exceeding attempt limit from outbox", "error", err)
+		return err
+	}
+	if len(failedUsers) == 0 {
+		ow.logger.Debug("No users exceeding attempt limit found in outbox")
+		return nil
+	}
+	ow.logger.Debug("Found users exceeding attempt limit in outbox", "count", len(failedUsers))
+	ow.logger.Debug("Start making users as failed to send in kafka", "Users", failedUsers)
+	//	Помечаем эти записи как ошибочные
+	err = ow.usersOutboxRepo.MarkAsFailed(failedUsers)
+	if err != nil {
+		ow.logger.Error("Failed to mark users as failed in outbox", "error", err)
+		return err
+	}
+	ow.logger.Debug("Successfully marked users as failed in outbox")
+	return nil
 }

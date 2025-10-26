@@ -80,7 +80,7 @@ func CreateUser(log *slog.Logger, userRepo users_db.UserRepository, timeout time
 			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error(err.Error()))
 			return
 		}
-		log.Info("Created user", "user id", userId)
+		log.Debug("Created user", "user id", userId)
 		resp.RenderResponse(w, r, http.StatusCreated, create_user.CreateUserResponse{
 			resp.OK(),
 			userId,

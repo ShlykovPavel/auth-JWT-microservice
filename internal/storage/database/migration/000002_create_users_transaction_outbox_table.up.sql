@@ -1,7 +1,9 @@
+CREATE TYPE kafka_status AS ENUM ('pending', 'sent', 'failed');
+
 CREATE TABLE users_outbox (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
-    send_to_kafka bool default false,
+    send_to_kafka kafka_status default 'pending',
 --     payload JSONB NOT NULL,
     event_type VARCHAR(255) NOT NULL,
     attempt_count INT DEFAULT 0,
