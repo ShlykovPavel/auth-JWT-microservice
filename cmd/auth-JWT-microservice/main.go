@@ -17,9 +17,7 @@ const (
 	envProd  = "prod"
 )
 
-// TODO Решено использовать паттерн transaction outbox для надёжной отправки сообщений в Kafka
-// @description Воркер должен логировать свою работу и ошибки
-// @description Воркер должен быть протестирован
+//TODO Написать интеграционный тест на функцию SendUsersToKafka из outbox_worker
 
 // @title Auth Microservice API
 // @version 1.0

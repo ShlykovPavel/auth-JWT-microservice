@@ -22,7 +22,7 @@ func InitKafkaProducer(address string, topic string, logger *slog.Logger) *Kafka
 			BatchTimeout:           10 * time.Millisecond,
 			Logger:                 kafka.LoggerFunc(logger.Info),
 			ErrorLogger:            kafka.LoggerFunc(logger.Error),
-			AllowAutoTopicCreation: false,
+			AllowAutoTopicCreation: true,
 		},
 	}
 }

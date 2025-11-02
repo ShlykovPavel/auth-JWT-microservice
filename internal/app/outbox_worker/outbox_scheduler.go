@@ -11,13 +11,13 @@ func SetupScheduler(worker *OutboxWorker, interval time.Duration) *gocron.Schedu
 	// Джоба отправки пользователей в кафку
 	scheduler.Every(interval).Do(func() {
 		if err := worker.SendUsersToKafka(); err != nil {
-			worker.logger.Error("error sending users to Kafka in scheduler:", err)
+			worker.logger.Error("error sending users to Kafka in scheduler", "error", err.Error())
 		}
 	})
 	//джоба отметки записей как failed если превышен лимит попыток
 	scheduler.Every(interval).Do(func() {
 		if err := worker.MarkFailedUsers(); err != nil {
-			worker.logger.Error("error marking records as failed in scheduler:", err)
+			worker.logger.Error("error marking records as failed in scheduler", "error", err.Error())
 		}
 	})
 	scheduler.StartAsync()

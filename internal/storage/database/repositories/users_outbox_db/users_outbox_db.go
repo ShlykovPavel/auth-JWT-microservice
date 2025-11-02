@@ -38,7 +38,7 @@ type User struct {
 	Payload       users_db.UserInfo `json:"payload"`
 	EventType     string            `json:"event_type"`
 	AttemptCount  int               `json:"attempt_count"`
-	LastAttemptAt time.Time         `json:"last_attempt_at"`
+	LastAttemptAt *time.Time        `json:"last_attempt_at"`
 }
 
 func (or *UsersOutboxRepositoryImpl) GetUnsentUsers() ([]User, error) {
