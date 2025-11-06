@@ -17,7 +17,7 @@ const (
 	envProd  = "prod"
 )
 
-//TODO Написать интеграционный тест на функцию SendUsersToKafka из outbox_worker
+//TODO Покрыть тестами остальные функции и методы приложения
 
 // @title Auth Microservice API
 // @version 1.0
