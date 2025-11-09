@@ -14,7 +14,6 @@ import (
 	validators "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/validator"
 	users "github.com/ShlykovPavel/auth-JWT-microservice/internal/server/auth/register"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
-	//"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db/users_db"
 	"github.com/ShlykovPavel/auth-JWT-microservice/models/users/create_user"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/stretchr/testify/mock"

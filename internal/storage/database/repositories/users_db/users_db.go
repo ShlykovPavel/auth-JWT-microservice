@@ -181,7 +181,7 @@ func (us *UserRepositoryImpl) GetUserList(ctx context.Context, search string, li
 	}, nil
 }
 
-// CheckAdminInDB: расширена для users
+// CheckAdminInDB: проверка наличия админа в users
 func (us *UserRepositoryImpl) CheckAdminInDB(ctx context.Context) (UserInfo, error) {
 	query := `SELECT id, first_name, last_name, email, password, phone FROM users WHERE Role LIKE '%admin%'`
 	var user UserInfo
