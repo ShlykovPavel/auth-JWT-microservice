@@ -1,10 +1,10 @@
-INSERT INTO users (id, first_name, last_name, email, password, role, phone, created_at, updated_at)
+INSERT INTO users (id, first_name, last_name, email, password, role, phone, created_at, updated_at, username)
 VALUES
-(1, 'John', 'Doe', 'john@example.com', '$2a$10$examplehash', 'user', '1234567890', NOW(), NOW()),
-(2, 'Jane', 'Smith', 'jane@example.com', '$2a$10$examplehash', 'user', '0987654321', NOW(), NOW()),
-(3, 'Alice', 'Johnson', 'alice@example.com', '$2a$10$examplehash', 'user', '1122334455', NOW(), NOW()),
-(4, 'Bob', 'Brown', 'bob@example.com', '$2a$10$examplehash', 'user', '5566778899', NOW(), NOW()),
-(5, 'Charlie', 'Davis', 'charlie@example.com', '$2a$10$examplehash', 'user', '6677889900', NOW(), NOW());
+(1, 'John', 'Doe', 'john@example.com', '$2a$10$examplehash', 'user', '1234567890', NOW(), NOW(), 'john_doe'),
+(2, 'Jane', 'Smith', 'jane@example.com', '$2a$10$examplehash', 'user', '0987654321', NOW(), NOW(), 'jane_smith'),
+(3, 'Alice', 'Johnson', 'alice@example.com', '$2a$10$examplehash', 'user', '1122334455', NOW(), NOW(), 'alice_johnson'),
+(4, 'Bob', 'Brown', 'bob@example.com', '$2a$10$examplehash', 'user', '5566778899', NOW(), NOW(), 'bob_brown'),
+(5, 'Charlie', 'Davis', 'charlie@example.com', '$2a$10$examplehash', 'user', '6677889900', NOW(), NOW(), 'charlie_davis');
 
 INSERT INTO users_outbox (user_id, send_to_kafka, event_type, attempt_count, last_attempt_at, created_at, updated_at)
 VALUES (1, 'pending', 'USER_CREATED', 0, NULL, NOW(), NOW()),
