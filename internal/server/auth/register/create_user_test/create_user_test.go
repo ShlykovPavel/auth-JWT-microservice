@@ -14,6 +14,7 @@ import (
 	validators "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/validator"
 	users "github.com/ShlykovPavel/auth-JWT-microservice/internal/server/auth/register"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_outbox_db"
 	"github.com/ShlykovPavel/auth-JWT-microservice/models/users/create_user"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/stretchr/testify/mock"
@@ -22,11 +23,12 @@ import (
 
 func TestCreateUser(t *testing.T) {
 	tests := []struct {
-		testName       string
-		input          create_user.UserCreate
-		setupMock      func(*users_db.MockUserRepository)
-		expectedStatus int
-		expectedBody   string
+		testName        string
+		input           create_user.UserCreate
+		setupMock       func(*users_db.MockUserRepository)
+		setupOutboxMock func(*users_outbox_db.MockUsersOutboxRepository)
+		expectedStatus  int
+		expectedBody    string
 	}{
 		{
 			testName: "success creating user",
@@ -36,11 +38,15 @@ func TestCreateUser(t *testing.T) {
 				Email:     "ryanGosling@gmail.com",
 				Password:  "password",
 				Phone:     "+78951235678",
+				Username:  "ryangosling",
 			},
 			setupMock: func(mockRepo *users_db.MockUserRepository) {
 				mockRepo.On("CreateUser", mock.Anything, mock.MatchedBy(func(u *create_user.UserCreate) bool {
 					return u.Email == "ryanGosling@gmail.com" && u.FirstName == "Ryan"
 				})).Return(int64(123), nil).Once()
+			},
+			setupOutboxMock: func(mockOutboxRepo *users_outbox_db.MockUsersOutboxRepository) {
+				mockOutboxRepo.On("AddUserToOutbox", int64(123), "user_created").Return(nil).Once()
 			},
 			expectedStatus: http.StatusCreated,
 			expectedBody:   `{"status":"OK","id":123}`,
@@ -53,12 +59,16 @@ func TestCreateUser(t *testing.T) {
 				Email:     "ryanGosling@gmail.com",
 				Password:  "password",
 				Phone:     "+78951235678",
+				Username:  "",
 			},
 			setupMock: func(mockRepo *users_db.MockUserRepository) {
 				// Не настраиваем мок так как будет ошибка
 			},
+			setupOutboxMock: func(mockOutboxRepo *users_outbox_db.MockUsersOutboxRepository) {
+				// Не настраиваем мок так как будет ошибка валидации
+			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"status":"ERROR","error":"field FirstName is required"}`,
+			expectedBody:   `{"status":"ERROR","error":"field FirstName is required, field Username is required"}`,
 		},
 		{
 			testName: "email already exists",
@@ -68,10 +78,14 @@ func TestCreateUser(t *testing.T) {
 				Email:     "ryanGosling@gmail.com",
 				Password:  "password",
 				Phone:     "+78951235678",
+				Username:  "ryangosling",
 			},
 			setupMock: func(mockRepo *users_db.MockUserRepository) {
 				mockRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("*create_user.UserCreate")).
 					Return(int64(0), users_db.ErrEmailAlreadyExists).Once()
+			},
+			setupOutboxMock: func(mockOutboxRepo *users_outbox_db.MockUsersOutboxRepository) {
+				// Не настраиваем мок так как будет ошибка при создании пользователя
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `{"status":"ERROR","error":"Пользователь с email уже существует. "}`,
@@ -84,6 +98,7 @@ func TestCreateUser(t *testing.T) {
 				Email:     "ryanGosling@gmail.com",
 				Password:  "password",
 				Phone:     "+78951235678",
+				Username:  "ryangosling",
 			},
 			setupMock: func(mockRepo *users_db.MockUserRepository) {
 				mockRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("*create_user.UserCreate")).
@@ -91,6 +106,9 @@ func TestCreateUser(t *testing.T) {
 						time.Sleep(6 * time.Second)
 					}).
 					Return(int64(0), context.DeadlineExceeded).Once()
+			},
+			setupOutboxMock: func(mockOutboxRepo *users_outbox_db.MockUsersOutboxRepository) {
+				// Не настраиваем мок так как будет timeout
 			},
 			expectedStatus: http.StatusGatewayTimeout,
 			expectedBody:   `{"status":"ERROR","error":"Request timed out or canceled"}`,
@@ -105,11 +123,13 @@ func TestCreateUser(t *testing.T) {
 			logger := slog.Default()
 			timeout := 5 * time.Second
 			mockRepo := new(users_db.MockUserRepository)
+			mockOutboxRepo := new(users_outbox_db.MockUsersOutboxRepository)
 
-			handler := users.CreateUser(logger, mockRepo, timeout)
+			handler := users.CreateUser(logger, mockRepo, timeout, mockOutboxRepo)
 
-			// Настраиваем мок
+			// Настраиваем моки
 			test.setupMock(mockRepo)
+			test.setupOutboxMock(mockOutboxRepo)
 
 			// Создаём запрос
 			body, _ := json.Marshal(test.input)
@@ -131,6 +151,7 @@ func TestCreateUser(t *testing.T) {
 
 			// Проверяем, что все ожидаемые вызовы мока выполнены
 			mockRepo.AssertExpectations(t)
+			mockOutboxRepo.AssertExpectations(t)
 		})
 	}
 }

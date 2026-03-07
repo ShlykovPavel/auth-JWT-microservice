@@ -6,4 +6,5 @@ type UserCreate struct {
 	Email     string `json:"email" validate:"required,email"`
 	Password  string `json:"password"  validate:"required,min=3,max=64"`
 	Phone     string `json:"phone" validate:"required,numeric"`
+	Username  string `json:"username" validate:"required,min=3,max=64"`
 }

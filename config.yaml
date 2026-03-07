@@ -1,5 +1,5 @@
 ENV: dev
-address: localhost:8080
+address: localhost:8090
 db_host: localhost
 db_port: 5432
 db_name: auth_service_db

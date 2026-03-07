@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="0678e37c-1079-4420-abde-e947ae2d11a7" name="Changes" comment="fix comments">
+      <change afterPath="$PROJECT_DIR$/.idea/auth-JWT-microservice.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/c1fed8c6-d21b-43cb-aeec-d0f154d36a7f.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/c1fed8c6-d21b-43cb-aeec-d0f154d36a7f/storage_v2/_src_/database/auth_service_db.PxEbVA.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/c1fed8c6-d21b-43cb-aeec-d0f154d36a7f/storage_v2/_src_/database/auth_service_db.PxEbVA/schema/information_schema.FNRwLQ.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/c1fed8c6-d21b-43cb-aeec-d0f154d36a7f/storage_v2/_src_/database/auth_service_db.PxEbVA/schema/pg_catalog.0S1ZNQ.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/c1fed8c6-d21b-43cb-aeec-d0f154d36a7f/storage_v2/_src_/database/auth_service_db.PxEbVA/schema/public.abK9xQ.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/c1fed8c6-d21b-43cb-aeec-d0f154d36a7f/storage_v2/_src_/database/auth_service_db.PxEbVA/schema/public.abK9xQ.zip" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/storage/database/repositories/users_outbox_db/users_outbox_db_mock.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/secret_config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/server/auth/register/create_user_test/create_user_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/server/auth/register/create_user_test/create_user_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/storage/database/migration/000001_create_users_table.up.sql" beforeDir="false" afterPath="$PROJECT_DIR$/internal/storage/database/migration/000001_create_users_table.up.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/storage/database/repositories/users_db/users_db.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/storage/database/repositories/users_db/users_db.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/users/create_user/create_user_request_dto.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/users/create_user/create_user_request_dto.go" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_/Users/pavelslykov/GO Repositories/auth-JWT-microservice" value="30DoNV0IQ8OpAA8efeRdDd5qv1t" />
+    </persistenceIdMap>
+  </component>
+  <component name="CopilotUserSelectedModel">
+    <selectedModels>
+      <entry key="chat-panel" value="Claude Sonnet 4.5" />
+      <entry key="agent-panel" value="Claude Sonnet 4.5" />
+    </selectedModels>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" url="file://$USER_HOME$/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.9.darwin-arm64" />
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;ShlykovPavel&quot;
+  }
+}</component>
+  <component name="GitHubPullRequestState">{}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/ShlykovPavel/booker.git&quot;,
+    &quot;accountId&quot;: &quot;2acb29de-b4ac-4a82-b414-5707036304a7&quot;
+  }
+}</component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="30DoNV0IQ8OpAA8efeRdDd5qv1t" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultGoTemplateProperty": "Go File",
+    "Docker.Dockerfile.executor": "Run",
+    "Docker.docker-compose.yml: Compose Deployment.executor": "Run",
+    "Go Build.go build booker/cmd/auth-JWT-microservice.executor": "Run",
+    "Go Build.go build github.com/ShlykovPavel/auth-JWT-microservice/cmd/auth-JWT-microservice.executor": "Run",
+    "Go Test.TestCreateUser in github.com/ShlykovPavel/auth-JWT-microservice/internal/server/auth/register/create_user_test.executor": "Run",
+    "Go Test.TestCreateUser/wrong_type_in_field in github.com/ShlykovPavel/auth-JWT-microservice/internal/server/auth/register/create_user_test.executor": "Run",
+    "Go Test.TestGetUser in github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users/get_user/get_user_tests.executor": "Run",
+    "Go Test.TestSendUsersToKafka in github.com/ShlykovPavel/auth-JWT-microservice/internal/app/outbox_worker.executor": "Run",
+    "Makefile Target.add_migration.executor": "Run",
+    "Makefile Target.run_migration_down.executor": "Run",
+    "Makefile Target.run_migration_up.executor": "Run",
+    "Makefile Target.run_tests.executor": "Run",
+    "Makefile Target.swagger_generation.executor": "Run",
+    "Makefile Target.tidy.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.GoLinterPluginOnboarding": "true",
+    "RunOnceActivity.GoLinterPluginOnboardingV2": "true",
+    "RunOnceActivity.GoLinterPluginStorageMigration": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.go.analysis.ui.options.defaults": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "git-widget-placeholder": "user-service__messenger",
+    "go.import.settings.migrated": "true",
+    "go.sdk.automatically.set": "true",
+    "last_opened_file_path": "/Users/pavelslykov/GO Repositories/auth-JWT-microservice",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "project.propVCSSupport.Mappings"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
+    ]
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/models" />
+      <recent name="$PROJECT_DIR$/internal/lib/services" />
+      <recent name="$PROJECT_DIR$/internal/storage/database/repositories" />
+      <recent name="$PROJECT_DIR$/internal/lib/api" />
+      <recent name="$PROJECT_DIR$/internal/server" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/internal/kafka/producer" />
+      <recent name="$PROJECT_DIR$/internal/server/auth/register" />
+      <recent name="$PROJECT_DIR$" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Makefile Target.run_migration_up">
+    <configuration name="go build github.com/ShlykovPavel/auth-JWT-microservice/cmd/auth-JWT-microservice" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="auth-JWT-microservice" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/ShlykovPavel/auth-JWT-microservice/cmd/auth-JWT-microservice" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/cmd/auth-JWT-microservice/main.go" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_migration_down" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" temporary="true">
+      <makefile filename="$PROJECT_DIR$/Makefile" target="run_migration_down" workingDirectory="" arguments="">
+        <envs />
+      </makefile>
+      <method v="2" />
+    </configuration>
+    <configuration name="run_migration_up" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" temporary="true">
+      <makefile filename="$PROJECT_DIR$/Makefile" target="run_migration_up" workingDirectory="" arguments="">
+        <envs />
+      </makefile>
+      <method v="2" />
+    </configuration>
+    <configuration name="run_tests" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" temporary="true">
+      <makefile filename="$PROJECT_DIR$/Makefile" target="run_tests" workingDirectory="" arguments="">
+        <envs />
+      </makefile>
+      <method v="2" />
+    </configuration>
+    <configuration name="tidy" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" temporary="true">
+      <makefile filename="$PROJECT_DIR$/Makefile" target="tidy" workingDirectory="" arguments="">
+        <envs />
+      </makefile>
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="docker-deploy" factoryName="docker-compose.yml" temporary="true">
+      <deployment type="docker-compose.yml">
+        <settings />
+      </deployment>
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="docker-deploy" factoryName="dockerfile" temporary="true">
+      <deployment type="dockerfile">
+        <settings />
+      </deployment>
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Makefile Target.run_migration_up" />
+        <item itemvalue="Makefile Target.run_migration_down" />
+        <item itemvalue="Go Build.go build github.com/ShlykovPavel/auth-JWT-microservice/cmd/auth-JWT-microservice" />
+        <item itemvalue="Makefile Target.tidy" />
+        <item itemvalue="Makefile Target.run_tests" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-gosdk-72a9cf600ed8-dfa3e7267ae0-org.jetbrains.plugins.go.sharedIndexes.bundled-GO-253.30387.193" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="0678e37c-1079-4420-abde-e947ae2d11a7" name="Changes" comment="" />
+      <created>1753171464553</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1753171464553</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="контрольный коммит на котором всё работает без gRPC" />
+    <MESSAGE value="refresh project: add swagger, health check, metrics, config init, optimize requests" />
+    <MESSAGE value="add ci cd pipline" />
+    <MESSAGE value="add migrations to compose" />
+    <MESSAGE value="add copy migration folder to dockerfile" />
+    <MESSAGE value="merge user service in auth service" />
+    <MESSAGE value="outbox_worker implementation begin" />
+    <MESSAGE value="1st working kafka producer iteration" />
+    <MESSAGE value="set graceful shutdown for kafka producer" />
+    <MESSAGE value="fix kafka message" />
+    <MESSAGE value="set kafka scheduler interval by config" />
+    <MESSAGE value="implement outbox worker with failure handling and user marking" />
+    <MESSAGE value="send users to kafka integration test" />
+    <MESSAGE value="upd todo" />
+    <MESSAGE value="fix comments" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix comments" />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+</project>
