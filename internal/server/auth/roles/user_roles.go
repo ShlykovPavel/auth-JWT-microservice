@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/server/auth"
 	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
@@ -23,7 +23,7 @@ func CheckAdminInDB(poll *pgxpool.Pool, log *slog.Logger) error {
 		if errors.Is(err, pgx.ErrNoRows) {
 			log.Error("no admin role found", "error", err)
 			//Создаём захэшированный пароль
-			passwordHash, err := users.HashUserPassword("password", log)
+			passwordHash, err := auth.HashUserPassword("password", log)
 			if err != nil {
 				log.Error("Error while hashing password", "err", err)
 				return fmt.Errorf("failed to hash password: %w", err)
@@ -37,7 +37,7 @@ func CheckAdminInDB(poll *pgxpool.Pool, log *slog.Logger) error {
 		log.Error("error checking admin role", "error", err)
 		return err
 	}
-	log.Info("admin role check ok. no need to create admin role. Found admin:", "user", user)
+	log.Info("admin role check ok. no need to register admin role. Found admin:", "user", user)
 	return nil
 }
 
@@ -48,7 +48,7 @@ func CheckAdminInDB(poll *pgxpool.Pool, log *slog.Logger) error {
 // @Security BearerAuth
 // @Param id path int true "ID пользователя"
 // @Success 204
-// @Router /users/{id} [patch]
+// @Router /auth/{id} [patch]
 func SetAdminRole(log *slog.Logger, userRepo users_db.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := chi.URLParam(r, "id")

@@ -63,7 +63,7 @@ internal/storage/database/migration/
 ### Команды:
 - **Создать новую миграцию**:
   ```bash
-  migrate create -ext sql -dir internal/storage/database/migration -seq <название_миграции>
+  migrate register -ext sql -dir internal/storage/database/migration -seq <название_миграции>
   ```
 
 - **Применить миграции (up)**:

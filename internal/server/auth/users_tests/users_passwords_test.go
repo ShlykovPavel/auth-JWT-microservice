@@ -1,10 +1,11 @@
 package users_tests
 
 import (
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"strings"
 	"testing"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestHashUserPassword(t *testing.T) {

@@ -91,7 +91,7 @@ func CreatePool(ctx context.Context, config *DbConfig, logger *slog.Logger) (*pg
 
 	pool, err := pgxpool.NewWithConfig(ctx, connConfig)
 	if err != nil {
-		return nil, fmt.Errorf("create pool failed: %w", err)
+		return nil, fmt.Errorf("register pool failed: %w", err)
 	}
 	logger.Info("Successfully created pool")
 	// Проверка соединения
@@ -120,7 +120,7 @@ func CreateTables(poll *pgxpool.Pool, logger *slog.Logger) error {
 	defer connection.Release()
 
 	query := `
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS auth (
     id SERIAL PRIMARY KEY,
     first_name VARCHAR(64) NOT NULL,
     last_name VARCHAR(64) NOT NULL,
@@ -134,8 +134,8 @@ CREATE TABLE IF NOT EXISTS users (
 	defer cancel()
 	_, err = connection.Exec(ctx, query)
 	if err != nil {
-		logger.Error("create table failed", "err", err)
-		return fmt.Errorf("failed to create users table: %w", err)
+		logger.Error("register table failed", "err", err)
+		return fmt.Errorf("failed to register auth table: %w", err)
 	}
 	logger.Info("Users table created successfully")
 	return nil

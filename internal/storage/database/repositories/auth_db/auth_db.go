@@ -2,10 +2,11 @@ package auth_db
 
 import (
 	"context"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log/slog"
 	"strconv"
+
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type JWTTokenData struct {

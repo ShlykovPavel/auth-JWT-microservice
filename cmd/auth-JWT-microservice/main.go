@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	_ "github.com/ShlykovPavel/auth-JWT-microservice/docs"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/app"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/config"
 	"log"
 	"log/slog"
 	"os"
+
+	_ "github.com/ShlykovPavel/auth-JWT-microservice/docs"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/app"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/config"
 )
 
 const (
@@ -15,6 +16,8 @@ const (
 	envDev   = "dev"
 	envProd  = "prod"
 )
+
+//TODO Покрыть тестами остальные функции и методы приложения
 
 // @title Auth Microservice API
 // @version 1.0

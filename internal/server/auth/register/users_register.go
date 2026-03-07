@@ -3,15 +3,18 @@ package users
 import (
 	"context"
 	"errors"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/body"
-	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
-	users "github.com/ShlykovPavel/auth-JWT-microservice/internal/server/users"
-	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
-	"github.com/ShlykovPavel/auth-JWT-microservice/models/users/create_user"
-	"github.com/go-chi/chi/v5/middleware"
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/body"
+	resp "github.com/ShlykovPavel/auth-JWT-microservice/internal/lib/api/response"
+	users "github.com/ShlykovPavel/auth-JWT-microservice/internal/server/auth"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_db"
+	"github.com/ShlykovPavel/auth-JWT-microservice/internal/storage/database/repositories/users_outbox_db"
+	"github.com/ShlykovPavel/auth-JWT-microservice/models/users/create_user"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-playground/validator"
 )
 
 // CreateUser godoc
@@ -21,9 +24,9 @@ import (
 // @Param input body create_user.UserCreate true "Данные пользователя"
 // @Success 201 {object} create_user.CreateUserResponse
 // @Router /user/register [post]
-func CreateUser(log *slog.Logger, userRepo users_db.UserRepository, timeout time.Duration) http.HandlerFunc {
+func CreateUser(log *slog.Logger, userRepo users_db.UserRepository, timeout time.Duration, userOutboxRepo users_outbox_db.UsersOutboxRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "server/users.CreateUser"
+		const op = "server/auth.CreateUser"
 		log = log.With(
 			slog.String("operation", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
@@ -35,6 +38,11 @@ func CreateUser(log *slog.Logger, userRepo users_db.UserRepository, timeout time
 		var user create_user.UserCreate
 		err := body.DecodeAndValidateJson(r, &user)
 		if err != nil {
+			if validateErrs, ok := err.(validator.ValidationErrors); ok {
+				log.Error("Validation errors", "errors", validateErrs.Error())
+				resp.RenderResponse(w, r, http.StatusBadRequest, resp.ValidationError(validateErrs))
+				return
+			}
 			log.Error("Error while decoding request body", "err", err)
 			resp.RenderResponse(w, r, http.StatusBadRequest, resp.Error(err.Error()))
 			return
@@ -58,11 +66,21 @@ func CreateUser(log *slog.Logger, userRepo users_db.UserRepository, timeout time
 					err.Error()))
 				return
 			}
+			if errors.Is(err, context.DeadlineExceeded) {
+				resp.RenderResponse(w, r, http.StatusGatewayTimeout, resp.Error("Request timed out or canceled"))
+				return
+			}
 			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error(err.Error()))
 			return
 		}
-
-		log.Info("Created user", "user id", userId)
+		//Добавляем в таблицу outbox
+		err = userOutboxRepo.AddUserToOutbox(userId, "user_created")
+		if err != nil {
+			log.Error("Error while adding user to outbox", "err", err)
+			resp.RenderResponse(w, r, http.StatusInternalServerError, resp.Error(err.Error()))
+			return
+		}
+		log.Debug("Created user", "user id", userId)
 		resp.RenderResponse(w, r, http.StatusCreated, create_user.CreateUserResponse{
 			resp.OK(),
 			userId,
